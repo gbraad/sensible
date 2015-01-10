@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Fxos Sensible Location</title>
+	
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+<!-- styles -->
+
+<link href="positron/positron.css" type="text/css" rel="stylesheet"></link>
+
+<style>
+	
+body {
+	background: black;
+	color: white;
+	text-align: center;
+	margin-top: 20vw;
+	
+}	
+
+#skip
+{
+	width: 25vw;
+}
+	
+audio {
+	
+	width: 80vw;
+	
+}
+
+</style>
+
+<!-- positron -->
+
+<script src="positron/positron.js" type="text/javascript"></script>
+<script src="application.js" type="text/javascript"></script>
+
+<!-- sensible -->
+
+<script src="sensible.js" type="text/javascript"></script>
+
+<!-- server application mainline -->
+
+<script src="fxos.js" type="text/javascript"></script>
+
+<!-- for metadata arsing -->
+
+<!-- sadly, including async storage results in a app crash on some mp3s -->
+<!-- <script src="js/async_storage.js" type="text/javascript"></script> -->
+
+<script src="js/metadata_scripts.js" type="text/javascript"></script>
+
+</script>
+
+</head>
+
+<body>
+	<div>Go to: http://jukebox.local:3003</div>
+	<div id="status"></div>
+	<button id="skip" p-action="call: skip">Skip</button>
+</body>
+
+</html>

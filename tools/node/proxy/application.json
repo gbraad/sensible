@@ -1,0 +1,35 @@
+
+
+{
+	
+	"actions":
+	{
+		"changelens" : "ChangeLensAction"
+	},
+
+	"events":
+	{
+		"fxos-pickpicturesuccess" : "positron.fxos.event.PickPictureSuccessEvent"
+	},
+	
+	"tags" :
+	{
+		"fxos-contacts" : "positron.fxos.tag.ContactsTag",
+		"fxos-mediadb" : "positron.fxos.tag.MediaDBTag",
+		"fxos-music" : "positron.fxos.tag.MusicTag"
+	},
+    "triggers" :
+    {
+      "corkscrew" : "CorkscrewTrigger"
+    },
+
+	"sensible":
+	{
+		"proxy_host" : "localhost",
+		"proxy_port" : 8000,
+        "proxy_service": "_sensible._tcp.local"
+	}
+
+
+}
+

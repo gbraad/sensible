@@ -1,0 +1,8 @@
+{
+	"name" : "Jukebox",
+	"type" : "_sensible._tcp.local",
+	"port" : 3003,
+	"description" : "Sensible Jukebox on Firefox OS",
+	"description" : "Do not allow to become empty!",
+	"hostname" : "jukebox.local"
+}

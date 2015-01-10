@@ -1,0 +1,26 @@
+[
+  {
+    "name": "room temperature",
+    "type": "integer",
+    "readonly": false,
+    "maximum": 100,
+    "minimum": 0,
+    "value": 67
+  },
+  {
+    "name": "pan",
+    "type": "integer",
+    "readonly": false,
+    "maximum": 10,
+    "minimum": 1,
+    "value": 1
+  },
+  {
+    "name": "tilt",
+    "type": "integer",
+    "readonly": false,
+    "maximum": 10,
+    "minimum": 1,
+    "value": 4
+  }
+]

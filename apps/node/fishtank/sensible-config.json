@@ -1,0 +1,9 @@
+{
+	"_comment" : "config items, reserved names and types",
+
+	"name" : "Fish Tank",
+	"type" : "_sensible._tcp.local",
+	"port" : 3006,
+	"description" : "Overflow from the fridge for fish night",
+	"hostname" : "fishtank.local"
+}

@@ -1,0 +1,26 @@
+{
+	"version": "0.1",
+	"name": "Sensible MDNS",
+	"type": "certified",
+    "role": "mdns",
+	"launch_path": "/index.html",
+	"description": "An MDNS Browser for Sensible",
+	"runcible": "true",
+	"icons": {
+			"128": "/resources/monohm_mark_lg_black.png"
+	},
+	"developer": {
+			"name": "Monohm Inc.",
+			"url": "http://mono.hm"
+	},
+	"installs_allowed_from": ["*"],
+	"default_locale": "en",
+	"permissions":
+	{
+      "tcp-socket":{},
+      "udp-socket":{},
+      "webapps-manage":{},
+      "wifi-manage":{}
+	}
+}
+

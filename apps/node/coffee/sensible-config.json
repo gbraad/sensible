@@ -1,0 +1,10 @@
+{
+	"_comment" : "config items, reserved names and types",
+
+	"name" : "Coffee Maker",
+	"type" : "_sensible._tcp.local",
+	"port" : 3004,
+	"description" : "Do not allow to become empty!",
+	"hostname" : "coffeemaker.local",
+	"ttl": 30
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "name": "temperature",
+    "type": "integer",
+    "readonly": false,
+    "maximum": 100,
+    "minimum": -50,
+    "value": 72
+  },
+  {
+    "name": "feed fish",
+    "type": "button",
+    "readonly": false,
+    "value": "feed fish"
+  },
+  {
+    "name": "feeding reminder",
+    "type": "toggle",
+    "readonly": false,
+    "value": "on"
+  }
+]

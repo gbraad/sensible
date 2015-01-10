@@ -1,0 +1,77 @@
+
+.paginator {
+  
+  position: absolute;
+  top: 0;
+  left: 0;
+
+}
+
+.paginator .paginator-dot {
+  
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-block;
+  width: 2vw;
+  height: 2vw;
+  margin-top: 0;
+  border-radius: 100%;
+  box-sizing: border-box;
+  transform-origin: 49vw 0 0;
+  background: #999;
+
+}
+
+.paginator .paginator-dot.things {
+ 
+  box-shadow: 0 0 10px rgba(0,0,255,1);
+  background: #99f;
+  
+}
+
+
+.paginator .paginator-dot:nth-of-type(1) { transform: rotate(0); }
+.paginator .paginator-dot:nth-of-type(2) { transform: rotate(-5deg); }
+.paginator .paginator-dot:nth-of-type(3) { transform: rotate(-10deg); }
+.paginator .paginator-dot:nth-of-type(4) { transform: rotate(-15deg); }
+.paginator .paginator-dot:nth-of-type(5) { transform: rotate(-20deg); }
+.paginator .paginator-dot:nth-of-type(6) { transform: rotate(-25deg); }
+.paginator .paginator-dot:nth-of-type(7) { transform: rotate(-30deg); }
+.paginator .paginator-dot:nth-of-type(8) { transform: rotate(-35deg); }
+.paginator .paginator-dot:nth-of-type(9) { transform: rotate(-40deg); }
+.paginator .paginator-dot:nth-of-type(10) { transform: rotate(-45deg); }
+.paginator .paginator-dot:nth-of-type(11) { transform: rotate(-50deg); }
+.paginator .paginator-dot:nth-of-type(12) { transform: rotate(-55deg); }
+.paginator .paginator-dot:nth-of-type(13) { transform: rotate(-60deg); }
+.paginator .paginator-dot:nth-of-type(14) { transform: rotate(-65deg); }
+.paginator .paginator-dot:nth-of-type(15) { transform: rotate(-70deg); }
+.paginator .paginator-dot:nth-of-type(16) { transform: rotate(-75deg); }
+.paginator .paginator-dot:nth-of-type(17) { transform: rotate(-80deg); }
+.paginator .paginator-dot:nth-of-type(18) { transform: rotate(-85deg); }
+.paginator .paginator-dot:nth-of-type(19) { transform: rotate(-90deg); }
+.paginator .paginator-dot:nth-of-type(20) { transform: rotate(-95deg); }
+.paginator .paginator-dot:nth-of-type(21) { transform: rotate(-100deg); }
+.paginator .paginator-dot:nth-of-type(22) { transform: rotate(-105deg); }
+.paginator .paginator-dot:nth-of-type(23) { transform: rotate(-110deg); }
+.paginator .paginator-dot:nth-of-type(24) { transform: rotate(-115deg); }
+.paginator .paginator-dot:nth-of-type(25) { transform: rotate(-120deg); }
+.paginator .paginator-dot:nth-of-type(26) { transform: rotate(-125deg); }
+.paginator .paginator-dot:nth-of-type(27) { transform: rotate(-130deg); }
+.paginator .paginator-dot:nth-of-type(28) { transform: rotate(-135deg); }
+.paginator .paginator-dot:nth-of-type(29) { transform: rotate(-140deg); }
+.paginator .paginator-dot:nth-of-type(30) { transform: rotate(-145deg); }
+.paginator .paginator-dot:nth-of-type(31) { transform: rotate(-150deg); }
+.paginator .paginator-dot:nth-of-type(32) { transform: rotate(-155deg); }
+.paginator .paginator-dot:nth-of-type(33) { transform: rotate(-160deg); }
+.paginator .paginator-dot:nth-of-type(34) { transform: rotate(-165deg); }
+.paginator .paginator-dot:nth-of-type(35) { transform: rotate(-170deg); }
+.paginator .paginator-dot:nth-of-type(36) { transform: rotate(-175deg); }
+.paginator .paginator-dot:nth-of-type(37) { transform: rotate(-180deg); }
+.paginator .paginator-dot:nth-of-type(38) { transform: rotate(-185deg); }
+.paginator .paginator-dot:nth-of-type(39) { transform: rotate(-190deg); }
+
+.paginator .paginator-dot.selected {  
+  background: white;
+}
+

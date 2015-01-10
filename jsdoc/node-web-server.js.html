@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: node-web-server.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: node-web-server.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file node-web-server.js
+ * @copyright Monohm 2014
+ */
+
+/**
+ * Web server for node.
+ * Implements support for POST on top of the regular incoming-request class.
+ *
+ * @class
+ * @constructor
+ * @param {function} inRequestListener - function to call with request when complete
+ */
+
+sensible.node.WebServer = function (inRequestListener)
+{
+	this.requestListener = inRequestListener;
+
+	if (gSensibleApplication.config.ssl)
+	{
+		var	sslConfig = gSensibleApplication.config.ssl;
+		
+		console.log ("reading certificate from " + sslConfig.certificate_path);
+		var	certificate = fs.readFileSync (sslConfig.certificate_path);
+
+		console.log ("reading private key from " + sslConfig.private_key_path);
+		var	privateKey = fs.readFileSync (sslConfig.private_key_path);
+
+		var	caCertificates = new Array ();
+		
+		for (var i = 0; i &lt; sslConfig.ca_certificate_paths.length; i++)
+		{
+			console.log ("reading CA certificate from " + sslConfig.ca_certificate_paths [i]);
+			caCertificates [i] = fs.readFileSync (sslConfig.ca_certificate_paths [i]);
+		}
+		
+		// HACK won't work on tessel
+		var	sslOptions =
+		{
+			cert: certificate,
+			key: privateKey,
+			ca: caCertificates
+		};
+		
+		this.server = https.createServer (sslOptions, this.onRequest.bind (this));
+	}
+	else
+	{
+		this.server = http.createServer (this.onRequest.bind (this));
+	}
+}
+
+/**
+ * Stop serving requests.
+ */
+
+sensible.node.WebServer.prototype.stop =
+function NodeWebServer_stop ()
+{
+	this.server.close ();
+}
+
+/**
+ * Listen for requests.
+ *
+ * @param {integer} inPort - port on which to listen, eg 80 for HTTP
+ */
+
+sensible.node.WebServer.prototype.listen =
+function NodeWebServer_listen (inPort)
+{
+	this.server.listen (inPort);
+}
+
+/**
+ * Dispatch event handler assignments.
+ * This class stands in for the regular server class, so we have to proxy
+ * the setting of various event handlers.
+ * Check for setting the request event handler, as we will call that
+ * when WE think the request is complete, ie once we've checked for POST, etc.
+ * Forward on any other event handler assignments to our server instance.
+ *
+ * @param {string} inEventName - name of event, eg request
+ * @param {function} inEventHandler - event handler function
+ */
+
+sensible.node.WebServer.prototype.on =
+function NodeWebServer_on (inEventName, inEventHandler)
+{
+	var	handled = false;
+	
+	if (inEventName == "request")
+	{
+		this.requestListener = inEventHandler;
+		handled = true;
+	}
+	
+	if (!handled)
+	{
+		this.server.on (inEventName, inEventHandler);
+	}
+}
+
+// event handlers
+
+/**
+ * Handle incoming HTTP requests.
+ * This implementation extends the regular Node http package
+ * by supporting POST.
+ *
+ * @param {object} inRequest - HTTP request
+ * @param {object} outResponse - HTTP response
+ */
+
+sensible.node.WebServer.prototype.onRequest =
+function NodeWebServer_onRequest (inRequest, outResponse)
+{
+	if (inRequest.method.toLowerCase () == "post")
+	{
+		var	body = "";
+		
+		var	self = this;
+		
+		inRequest.on
+		(
+			"data",
+			function (inData)
+			{
+				body += inData;
+			}
+		);
+		
+		inRequest.on
+		(
+			"end",
+			function (inData)
+			{
+				var	params = new Object ();
+				
+				var	paramElements = body.split ("&amp;");
+				
+				for (var i = 0; i &lt; paramElements.length; i++)
+				{
+					var	elements = paramElements [i].split ("=");
+					
+					if (elements.length > 1)
+					{
+						var	key = elements [0];
+						var	value = decodeURIComponent (elements [1]);
+						
+						params [key] = value;
+					}
+				}
+				
+				if (self.requestListener)
+				{
+					var	requestURL = url.parse (inRequest.url, true, true);
+					self.requestListener (inRequest, outResponse, requestURL, params);
+				}
+			}
+		);
+	}
+	else
+	{
+		if (this.requestListener)
+		{
+			var	requestURL = url.parse (inRequest.url, true, true);
+			this.requestListener (inRequest, outResponse, requestURL, requestURL.query);
+		}
+	}
+}
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="sensible.Application.html">Application</a></li><li><a href="sensible.fxos.Strategy.html">Strategy</a></li><li><a href="sensible.MDNS.html">MDNS</a></li><li><a href="sensible.node.Server.html">Server</a></li><li><a href="sensible.node.Strategy.html">Strategy</a></li><li><a href="sensible.node.WebServer.html">WebServer</a></li><li><a href="sensible.Strategy.html">Strategy</a></li></ul><h3>Global</h3><ul><li><a href="global.html#sensible">sensible</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Wed Dec 17 2014 17:11:11 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

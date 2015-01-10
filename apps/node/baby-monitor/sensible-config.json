@@ -1,0 +1,9 @@
+{
+	"_comment" : "config items, reserved names and types",
+
+	"name" : "Baby Monitor",
+	"type" : "_sensible._tcp.local",
+	"port" : 3001,
+	"description" : "Monitor in Willow's room",
+	"hostname" : "babymonitor.local"
+}

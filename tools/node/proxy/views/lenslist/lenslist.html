@@ -1,0 +1,61 @@
+
+<div class="lens-overflow-container p-visible" p-view="things-around:"> 
+  
+  <p-set name="currentlenspage" value="-1" context="page"></p-set>
+  
+  <p-list key="services" name="servicepage">
+
+    <div class="lenslist-page lens-page things-around">
+      
+      
+      <p-list key="servicepage" name="service">
+        
+<!--    <div>found $service.name; at $service.host;:$service.port;</div>-->
+      
+      <p-replace name="UUID" string="sensible-$service.host;-$service.port;" replace="." with="_" all="true">
+
+        <div
+          class="lenslist-icon nearby-device-icon count-$service.meta.count;"
+             
+          p-action-1="runview: lenslaunch"
+          p-action-1-params="name: $service.name;; server: $service.host;; port: $service.port;; uuid: $UUID;; jogSupport: jog_support;"
+             
+          p-action-2="removeclass: offscreen / #running-lenses"
+          >
+            <div 
+              class="lenslist-icon-content" 
+              id="app-icon-$UUID;"
+              style="background-image: url(http://$service.host;:$service.port;/sensible-app-icon.jpg); background-size: contain;"></div>
+
+        </div>
+        
+      </p-replace> 
+        
+    </div>  
+      
+  </p-list>
+    
+  
+  <div p-view="paginator:hc" class="paginator lenslist-paginator p-visible">
+  
+    <p-list key="services" name="service">
+
+      <p-if true="$service.meta.index; == 0">
+        <div class="paginator-dot selected"></div>
+      </p-if>
+      
+      <p-if false="$service.meta.index; == 0">
+        <div class="paginator-dot"></div>
+      </p-if>
+
+    </p-list>
+
+  </div>
+  
+  <div class="this-device"></div>
+
+</div>
+
+<div p-view="runninglenses:" id="running-lenses" ></div>
+
+<div p-view="lenslaunch:h" class="lenslauncher p-invisible"></div>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>WOT Browser</title>
+
+<!-- styles -->
+
+<link href="positron/positron.css" type="text/css" rel="stylesheet"></link>
+
+<style>
+
+iframe
+{
+	width: 500px;
+	height: 500px;
+}
+
+</style>
+
+<!-- scripts -->
+
+<script src="positron/prefixfree.min.js" type="text/javascript"></script>
+<script src="positron/prefixfree.dynamic-dom.min.js" type="text/javascript"></script>
+<script src="positron/positron.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+	<!-- register our search types -->
+	<p-json url="http://$config.wot.proxy_host;:$config.wot.proxy_port;/mdns/listenservice?type=_wot._tcp.local">
+		<p-if true="$json.type; == _wot._tcp.local">
+			<!-- wait for a bit to allow the proxy to cache some responses -->
+			<p-delay time="1000">
+				<p-json url="http://$config.wot.proxy_host;:$config.wot.proxy_port;/mdns/resolveservice?type=_wot._tcp.local" name="wots">
+					<p-list key="wots" name="wot">
+						<div p-action="refreshview: device" p-action-params="host: $wot.host;; port: $wot.port;;"
+						><img src="http://$wot.host;:$wot.port;/wot-app-list-icon.jpg">$wot.name;</div>
+					</p-list>
+				</p-json>
+			</p-delay>
+		</p-if>
+	</p-json>
+	
+	<div p-view="device:" class="p-invisible">
+		<iframe src="http://$params.host;:$params.port;/">
+		</iframe>
+	</div>
+</body>
+
+</html>

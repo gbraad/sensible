@@ -1,0 +1,5 @@
+[
+	{"name":"Front Door","type":"toggle","readonly":false},
+	{"name":"Back door","type":"toggle","readonly":false},
+	{"name":"Garage Door","type":"toggle","readonly":false}
+]

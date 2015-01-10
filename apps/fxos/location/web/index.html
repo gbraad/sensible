@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Sensible Location</title>
+
+<!-- styles -->
+
+<link href="positron/positron.css" type="text/css" rel="stylesheet"></link>
+
+<style>
+
+</style>
+
+<!-- scripts -->
+
+<script src="positron/prefixfree.min.js" type="text/javascript"></script>
+<script src="positron/prefixfree.dynamic-dom.min.js" type="text/javascript"></script>
+<script src="positron/positron.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+	<div p-action="(interval: 5s) showview: location"></div>
+	
+	<div p-view="location:">
+	<p-json url="properties/get?name=latitude" name="latitude">
+		<p-json url="properties/get?name=longitude" name="longitude">
+			<p-img src="http://maps.googleapis.com/maps/api/staticmap?center=$latitude.value;,$longitude.value;&zoom=14&size=400x300&sensor=false&markers=color:red|label:You Are Here|$latitude.value;,$longitude.value;"></p-img>
+		</p-json>
+	</p-json>
+
+</body>
+
+</html>

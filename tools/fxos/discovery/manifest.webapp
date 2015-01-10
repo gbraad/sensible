@@ -1,0 +1,44 @@
+{
+	"version": "1",
+	"name": "Sensible-Discovery",
+  "runcible": true,
+	"type": "privileged",
+	"launch_path": "/index.html",
+	"description": "Sensible Discovery",
+	"icons": {
+		"16": "/images/logo16.png",
+		"32": "/images/logo32.png",
+		"48": "/images/logo48.png",
+		"64": "/images/logo64.png",
+		"128": "/images/logo128.png"
+	},
+	"developer": {
+		"name": "Jason Proctor",
+		"url": "http://mono.hm"
+	},
+	"installs_allowed_from": ["*"],
+	"default_locale": "en",
+	"permissions": {
+    "browser":{},
+    "webapps-manage":{},
+    "mobileconnection":{},
+    "bluetooth":{},
+    "device-storage:sdcard":{ "access": "readwrite" },
+    "device-storage:pictures":{ "access": "readwrite" },
+    "device-storage:videos":{ "access": "readwrite" },
+    "device-storage:music":{ "access": "readcreate" },
+    "device-storage:apps":{ "access": "readonly" },
+    "settings":{ "access": "readwrite" },
+    "geolocation":{},
+    "wifi-manage":{},
+    "idle":{},
+    "network-events":{},
+    "embed-apps":{},
+    "background-sensors":{},
+    "audio-channel-notification":{},
+    "audio-channel-content":{},
+    "systemXHR": {},
+    "tcp-socket": {},
+    "udp-socket": {}
+	}
+}

@@ -1,0 +1,35 @@
+{
+	"version": "1",
+	"name": "Sensible-Location",
+	"type": "certified",
+	"launch_path": "/fxos.html",
+	"description": "Firefox OS WOT Location",
+	"icons": {
+		"16": "/images/logo16.png",
+		"32": "/images/logo32.png",
+		"48": "/images/logo48.png",
+		"64": "/images/logo64.png",
+		"128": "/images/logo128.png"
+	},
+	"developer": {
+		"name": "Jason Proctor",
+		"url": "http://mono.hm"
+	},
+	"installs_allowed_from": ["*"],
+	"default_locale": "en",
+	"permissions": {
+    "alarms": {},
+    "browser":{},
+    "power":{},
+    "mobileconnection":{},
+    "bluetooth":{},
+    "geolocation":{},
+    "network-events":{},
+    "background-sensors":{},
+    "permissions":{},
+    "systemXHR": {},
+    "tcp-socket": {},
+    "udp-socket": {},
+    "wifi-manage": {}
+	}
+}

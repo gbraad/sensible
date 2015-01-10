@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Beer Fridge!</title>
+
+<!-- styles -->
+
+<link href="positron/positron.css" type="text/css" rel="stylesheet"></link>
+
+<style>
+
+</style>
+
+<!-- scripts -->
+
+<script src="positron/prefixfree.min.js" type="text/javascript"></script>
+<script src="positron/prefixfree.dynamic-dom.min.js" type="text/javascript"></script>
+<script src="positron/positron.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+	<img src="wot-app-icon.jpg">
+	<p-json url="config/get" name="config">
+		<p-set name="page.devicename" value="$config.name;" context="application"></p-set>
+		<p-json url="properties/get" name="properties">
+			<h4>Hello, this is $config.name; here!</h4>
+			<form
+				p-action-1="(submit) ajaxform"
+				p-action-2="(p-ajaxformsuccess) showview: updated"
+				action="properties/set"
+				method="GET"
+				>
+				<p-list key="properties" name="property">
+					<p-set name="params.value" value="$property.value;">
+						<div>$property.name; = <span p-view="property_$property.name;:">$params.value;</span></div>
+					</p-set>
+					<p-if true="$property.type; == integer">
+						$property.minimum;
+						<input
+							p-action-1="(change) refreshview: property_$property.name;"
+							class="config-integer" name="$property.name;" type="range"
+							value="$property.value;" min="$property.minimum;" max="$property.maximum;"
+						>
+						$property.maximum;
+					</p-if>
+					<p-if true="$property.type; == string">
+						<input
+							class="config-string" name="$property.name;" type="text" maxlength="$property.maxlength;"
+							value="$property.value;"
+						>
+					</p-if>
+				</p-list>
+				<div>
+					<input name="submit" type="submit" value="Submit">
+				</div>
+			</form>
+			<div p-view="updated:" class="p-invisible">
+				$page.devicename; updated successfully!
+			</div>
+		</p-json>
+	</p-json>
+	
+</body>
+
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Coffee Maker</title>
+
+<meta name="viewport" content="width=device-width">
+
+<!-- styles -->
+
+<link href="positron/positron.css" type="text/css" rel="stylesheet"></link>
+<link href="base.css" type="text/css" rel="stylesheet"></link>
+
+<style>
+
+</style>
+
+<!-- scripts -->
+
+<script src="positron/prefixfree.min.js" type="text/javascript"></script>
+<script src="positron/prefixfree.dynamic-dom.min.js" type="text/javascript"></script>
+<script src="positron/positron.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+  <div class="container">
+	<img src="sensible-app-icon.jpg" width="20%">
+	<h3>Welcome to your Coffee Maker!</h3>
+	<h5>Last brewed 6 cups of Giant Steps at 12:43pm</h5>
+					
+	<div class="brew-states">
+		<div p-view="prebrew">
+			<div class="button" 
+				p-action-1="hideview:prebrew"
+				p-action-2="showview:brewing">Start Brew!</div>
+		</div>
+		
+		
+		<div p-view="brewing" class="brewing p-invisible">
+			Brewing! Coffee will be ready in <span class="timer">3 minutes</span>
+		</div>
+	</div>
+	
+	<section class="alerts" p-view="alerts:">
+		<div>
+			<label for="old">Alert me when coffee is old</label>
+			<input name="old" id="old" type="checkbox">
+		</div>
+		<div>
+			<label for="fresh">Alert me when coffee is ready</label>
+			<input name="fresh" id="fresh" type="checkbox">
+		</div>
+	</section>
+  </div>		
+	<div p-view="updated:" class="p-invisible success"
+    p-action="hideview: updated">
+		Settings saved successfully!
+	</div>
+	
+	<!--
+<p-json url="config/get" name="config">
+		<p-set name="page.devicename" value="$config.name;" context="application"></p-set>
+		<p-json url="properties/get" name="properties">
+			<h4>Welcome to your $config.name;!</h4>
+			<form
+				p-action-1="(submit) ajaxform"
+				p-action-2="(p-ajaxformsuccess) showview: updated"
+				action="properties/set"
+				method="GET"
+				>
+				<p-list key="properties" name="property">
+					<p-set name="params.value" value="$property.value;">
+						<div>$property.name; = <span p-view="property_$property.name;:">$params.value;</span></div>
+					</p-set>
+					<p-if true="$property.type; == integer">
+						$property.minimum;
+						<input
+							p-action-1="(change) refreshview: property_$property.name;"
+							class="config-integer" name="$property.name;" type="range"
+							value="$property.value;" min="$property.minimum;" max="$property.maximum;"
+						>
+						$property.maximum;
+					</p-if>
+					<p-if true="$property.type; == string">
+						<input
+							class="config-string" name="$property.name;" type="text" maxlength="$property.maxlength;"
+							value="$property.value;"
+						>
+					</p-if>
+										
+					<p-if true="$property.type; == toggle">
+						<div class="toggleswitch">
+							<input type="checkbox" name="$property.name;" class="config-toggle toggleswitch-checkbox" id="$property.name;" checked>
+							<label class="toggleswitch-label" for="$property.name;">
+								<span class="toggleswitch-inner"></span>
+								<span class="toggleswitch-switch"></span>
+							</label>
+						</div>
+					</p-if>
+					
+					<p-if true="$property.type; == button">
+						<button class="config-button" name="$property.name;" value="$property.value;">$property.value;</button>
+					</p-if>
+					
+					
+				</p-list>
+				<div>
+					<input name="submit" type="submit" value="submit">
+				</div>
+			</form>
+			<div p-view="updated:" class="p-invisible">
+				$page.devicename; updated successfully!
+			</div>
+		</p-json>
+	</p-json>
+-->
+	
+</body>
+
+</html>

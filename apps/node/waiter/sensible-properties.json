@@ -1,0 +1,21 @@
+[
+	{
+    "name": "total",
+    "type": "string",
+    "readonly": true,
+    "maxlength": 30,
+    "value": "14.79"
+  },
+  {
+    "name": "tip",
+    "type": "string",
+    "readonly": false,
+    "maxlength": 10,
+    "value": "14%"
+  },
+  {
+    "name": "pay",
+    "type": "button",
+    "value": "Ready to Pay"
+  }
+]

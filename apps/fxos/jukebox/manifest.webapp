@@ -1,0 +1,41 @@
+{
+	"version": "1",
+	"name": "Sensible-Jukebox",
+	"type": "certified",
+	"runcible": true,
+	"launch_path": "/fxos.html",
+	"description": "Firefox OS Sensible Jukebox",
+	"icons": {
+		"16": "/sensible_white_square.png",
+		"32": "/sensible_white_square.png",
+		"48": "/sensible_white_square.png",
+		"64": "/sensible_white_square.png",
+		"128": "/sensible_white_square.png",
+		"256": "/sensible_white_square.png"
+	},
+	"developer": {
+		"name": "Jason Proctor",
+		"url": "http://mono.hm"
+	},
+	"installs_allowed_from": ["*"],
+	"default_locale": "en",
+	"permissions": {
+    "device-storage:sdcard":{ "access": "readwrite" },
+    "device-storage:pictures":{ "access": "readwrite" },
+    "device-storage:videos":{ "access": "readwrite" },
+    "device-storage:music":{ "access": "readcreate" },
+    "device-storage:apps":{ "access": "readonly" },
+    "settings":{ "access": "readwrite" },
+    "storage":{},
+    "idle":{},
+    "background-sensors":{},
+    "permissions":{},
+    "audio-channel-notification":{},
+    "audio-channel-content":{},
+    "downloads":{},
+    "systemXHR": {},
+		"wifi-manage":{},
+    "tcp-socket": {},
+    "udp-socket": {}
+	}
+}

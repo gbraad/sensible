@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Living room luminosity",
+    "type": "integer",
+    "readonly": false,
+    "maximum": 100,
+    "minimum": 0,
+    "value": 33
+  },
+  {
+    "name": "color",
+    "type": "string",
+    "readonly": false,
+    "maxlength": 50,
+    "value": "red"
+  }
+]

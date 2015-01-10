@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: util.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: util.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>sensible.provide ("sensible.Util");
+
+sensible.Util = function ()
+{
+}
+
+/**
+ * User friendly front-end to XMLHttpRequest
+ * Essentially emulates $.ajax
+ * However, it will do JSONP for you using sensible.jsonp() if necessary
+ * Note that currently Firefox can't do binary types
+ *
+ * @param {object} inRequest - object describing the request
+ * url - url of request, minus params
+ * data - url params
+ * type - http method - GET, POST
+ * dataType - json, string, etc
+ * async - true/false
+ * success - function to call if request succeeds
+ * error - function to call on error
+ */
+
+sensible.Util.ajax = function (inRequest)
+{
+	// console.log ("sensible.Util.ajax(" + inRequest.url + ")");
+	
+	var	type = inRequest.type &amp;&amp; inRequest.type.length ? inRequest.type : "GET";
+
+	// ensure we upper case for later
+	// seems like something above the submit event lowercases the method :-S
+	type = type.toUpperCase ();
+
+	var	async = true;
+	
+	if (typeof (inRequest.async) == "boolean")
+	{
+		async = inRequest.async;
+	}
+
+	inRequest.dataType = inRequest.dataType.toLowerCase ();
+
+	if (inRequest.dataType == "jsonp"
+		|| (inRequest.dataType == "json" &amp;&amp; sensible.Util.isCrossDomainRequest (inRequest.url)))
+	{
+		// console.log ("using jsonp for url: " + inRequest.url);
+		
+		sensible.Util.jsonp (inRequest);
+	}
+	else
+	{
+		var	xhr = new XMLHttpRequest ();
+	
+		xhr.onreadystatechange = function ()
+		{
+			if (this.readyState == 4)
+			{
+				var	textStatus = "OK";
+				
+				// otherwise we check EVERYWHERE
+				if (!inRequest.success)
+				{
+					inRequest.success = function ()
+					{
+					}
+				}
+
+				if (!inRequest.error)
+				{
+					inRequest.error = function ()
+					{
+					}
+				}
+				
+				if (inRequest.dataType == "blob")
+				{
+					if (this.response)
+					{
+						inRequest.success (this.response, textStatus, this);
+					}
+					else
+					{
+						textStatus = "error";
+						inRequest.error (this, textStatus, "Not Found");
+					}
+				}
+				else
+				if (inRequest.dataType == "json")
+				{
+					// if loading off the filesystem, can"t tell the difference
+					// between a file not found and an empty file
+					// so if status = 0 and data is empty, call the error callback
+					if ((this.responseText &amp;&amp; this.responseText.length) || this.status == 200)
+					{
+						try
+						{
+							inRequest.success (JSON.parse (this.responseText), textStatus, this);
+						}
+						catch (inError)
+						{
+							textStatus = "parsererror";
+							inRequest.error (this, textStatus, inError);
+						}
+					}
+					else
+					{
+						textStatus = "error";
+						inRequest.error (this, textStatus, "Not Found");
+					}
+				}
+				else
+				{
+					// if loading off the filesystem, can"t tell the difference
+					// between a file not found and an empty file
+					// so if status = 0 and data is empty, call the error callback
+					if ((this.responseText &amp;&amp; this.responseText.length) || this.status == 200)
+					{
+						inRequest.success (this.responseText, textStatus, this);
+					}
+					else
+					{
+						textStatus = "error";
+						inRequest.error (this, textStatus, "Not Found");
+					}
+				}
+	
+				if (typeof (inRequest.complete) == "function")
+				{
+					inRequest.complete (this, textStatus);
+				}
+			}
+		}
+		// the order of open(), setRequestHeader(), and send() is important
+		
+		var	url = inRequest.url;
+
+		// also have to do this with GET urls
+		if (type == "GET" || type == "HEAD")
+		{
+			if (inRequest.data &amp;&amp; inRequest.data.length)
+			{
+				url += "?" + inRequest.data;
+			}
+		}
+	
+		xhr.open (type, url, async);
+	
+		if (inRequest.dataType == "blob")
+		{
+			xhr.responseType = "blob";
+		}
+		
+		if (typeof (inRequest.headers) == "object")
+		{
+			for (var key in inRequest.headers)
+			{
+				var	value = inRequest.headers [key];
+				
+				if (typeof (value) != "function")
+				{
+					xhr.setRequestHeader (key, value);
+				}
+			}
+		}
+		
+		// some browsers throw on send() instead of doing a state change, sigh
+		try
+		{
+			if (inRequest.type == "POST")
+			{
+				xhr.send (data);
+			}
+			else
+			{
+				xhr.send (null);
+			}
+		}
+		catch (inError)
+		{
+			if (typeof (inRequest.error) == "function")
+			{
+				inRequest.error (inRequest, "error", inError.name);
+			}
+		}
+	}
+}
+
+sensible.Util.jsonpSequence = 0;
+
+sensible.Util.jsonp = function (inRequest)
+{
+	var	jsonpCallbackName = "sensible_jsonp_callback_" + sensible.Util.jsonpSequence;
+	sensible.Util.jsonpSequence++;
+	
+	var	url = inRequest.url;
+	url += "?";
+	
+	if (inRequest.data &amp;&amp; inRequest.data.length)
+	{
+		url += inRequest.data;
+	}
+	
+	url += "&amp;callback=" + jsonpCallbackName;
+	
+	var	jsonTag = document.createElement ("script");
+	jsonTag.setAttribute ("type", "text/javascript");
+	jsonTag.setAttribute ("src", url);
+	
+	jsonTag.onload = function ()
+	{
+		// i hear that setTimeout()ing this is safer...
+		setTimeout
+		(
+			function ()
+			{
+				window [jsonpCallbackName] = null;
+				document.querySelector ("head").removeChild (jsonTag);
+			},
+			1
+		);
+	}
+	
+	document.querySelector ("head").appendChild (jsonTag);
+	
+	window [jsonpCallbackName] = function (inJSONObject)
+	{
+		if (inJSONObject)
+		{
+			if (typeof (inRequest.success) == "function")
+			{
+				inRequest.success (inJSONObject, "OK", null);
+			}
+		}
+		else
+		{
+			if (typeof (inRequest.error) == "function")
+			{
+				inRequest.error (null, "ERROR", null);
+			}
+		}
+	}
+}
+
+/**
+ * Decides whether a request for a URL is cross-domain or not.
+ *
+ * @param {string} inURL - URL of request
+ */
+
+sensible.Util.isCrossDomainRequest = function (inURL)
+{
+	var	here = document.createElement ("a");
+	here.href = document.location.href.toLowerCase ();
+	
+	var	there = document.createElement ("a");
+	there.href = inURL.toLowerCase ();
+	
+	// host includes the port, if any
+	return here.protocol != there.protocol || here.host != there.host;
+}
+
+sensible.Util.kExtensionToContentType = 
+{
+	"css" : "text/css",
+	"gif" : "image/gif",
+	"htm" : "text/html",
+	"html" : "text/html",
+	"jpg" : "image/jpeg",
+	"jpeg" : "image/jpeg",
+	"json" : "application/json",
+	"js" : "application/javascript",
+	"mp3" : "audio/mpeg3",
+	"mpg" : "video/mpeg",
+	"png" : "image/png",
+	"rtf" : "application/rtf",
+	"xml" : "application/xml"
+};
+
+// pass any string in here
+sensible.Util.mapExtensionToContentType = function (inString)
+{
+	// console.log ("Util.mapExtensionToContentType(" + inString + ")");
+	
+	var	extension = inString;
+	var	periodIndex = inString.lastIndexOf (".");
+	
+	if (periodIndex >= 0)
+	{
+		extension = inString.substring (periodIndex + 1);
+	}
+	
+	extension = extension.toLowerCase ();
+
+	var	contentType = sensible.Util.kExtensionToContentType [extension];
+	
+	if (!contentType)
+	{
+		console.error ("no content type for extension (" + extension + ")");
+		contentType = "application/octet-stream";
+	}
+	
+	return contentType;
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="sensible.Application.html">Application</a></li><li><a href="sensible.fxos.Strategy.html">Strategy</a></li><li><a href="sensible.MDNS.html">MDNS</a></li><li><a href="sensible.node.Server.html">Server</a></li><li><a href="sensible.node.Strategy.html">Strategy</a></li><li><a href="sensible.node.WebServer.html">WebServer</a></li><li><a href="sensible.Strategy.html">Strategy</a></li></ul><h3>Global</h3><ul><li><a href="global.html#sensible">sensible</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Wed Dec 17 2014 17:11:11 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+[
+  {
+    "name": "temperature",
+    "type": "integer",
+    "readonly": false,
+    "maximum": 100,
+    "minimum": 40,
+    "value": 76
+  }
+]

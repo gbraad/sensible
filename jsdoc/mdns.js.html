@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: mdns.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: mdns.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Multicast DNS based service &amp; host discovery and registration
+ *
+ * @constructor
+ * @param {strategy} instrategy - a strategy to use for host-dependent operations
+ */
+
+sensible.MDNS = function ()
+{
+	this.strategy = sensible.StrategyFactory.createStrategy ();
+	
+	this.foundHosts = new Object ();
+	
+	this.hostsByName = new Object ();
+	this.hostResolutionsByName = new Object ();
+
+	this.foundServices = new Object ();
+
+	this.servicesByKey = new Object ();
+	this.servicesByType = new Object ();
+	this.serviceResolutionsByType = new Object ();
+	
+	// we set up a fake service record
+	// for name resolution off .local
+	// which we do automagically
+	this.localService = new Object ();
+	
+	this.localService.name = this.strategy.getHostName ();
+	
+	if (this.localService.name &amp;&amp; this.localService.name.length)
+	{
+		// some hosts give .local in this and some don't
+		// we especially want to match the ones that don't
+		this.localService.name = this.localService.name.replace (".local", "");
+		this.localService.name = this.localService.name.toLowerCase ();
+	}
+	else
+	{
+		console.log ("MDNS() couldn't find hostname");
+	}
+	
+	this.localService.host = this.strategy.getIPAddress ();
+	
+	// note the polling period should be less than the default TTL
+	// polling period is in ms, TTL is in seconds, haha
+	this.pollingPeriod = 30000;
+	this.defaultTTL = 500;
+};
+
+/**
+ * Start Multicast DNS processing.
+ * Must be called prior to any request for discovery or registration.
+ *
+ * @param {function} inCallback - function to be called once startup is complete
+ */
+
+sensible.MDNS.prototype.start = function (inCallback)
+{	
+	var	self = this;
+	
+	this.strategy.open
+	(
+		5353,
+		function (inError)
+		{
+			if (inError)
+			{
+				console.log ("error calling bind: " + inError.toString ());
+			}
+			else
+			{
+				self.strategy.addMembership
+				(
+					"224.0.0.251",
+					function ()
+					{
+						self.strategy.listen (self.onPacketReceived.bind (self));
+						self.startPolling ();
+					}
+				);
+			}
+			
+			if (inCallback)
+			{
+				inCallback (inError);
+			}
+		}
+	);
+}
+
+/**
+ * Cancel a request to resolve a hostname to an address.
+ *
+ * @param {object} inResolution - resolution descriptor returned by resolveHost()
+ */
+
+sensible.MDNS.prototype.cancelResolveHost = function (inResolution)
+{
+	var	result = false;
+	var	resolutions = this.hostResolutionsByName [inResolution.name];
+	
+	if (resolutions)
+	{
+		for (var i = 0; i &lt; resolutions.length; i++)
+		{
+			if (this.resolutions [i] == inResolution)
+			{
+				resolutions.splice (i, 1);
+				result = true;
+				break;
+			}
+		}
+	}
+	
+	return result;
+}
+
+/**
+ * Cancel a request to discover a service type.
+ *
+ * @param {object} inResolution - resolution descriptor returned by resolveService()
+ */
+
+sensible.MDNS.prototype.cancelResolveService = function (inResolution)
+{
+	console.log ("MDNS.unregisterService(" + inResolution.type + ")");
+
+	var	result = false;
+	var	resolutions = this.serviceResolutionsByType [inResolution.type];
+	
+	if (resolutions)
+	{
+		for (var i = 0; i &lt; resolutions.length; i++)
+		{
+			if (this.resolutions [i] == inResolution)
+			{
+				resolutions.splice (i, 1);
+				result = true;
+				break;
+			}
+		}
+	}
+	
+	return result;
+}
+
+/**
+ * Stop Multicast DNS operations.
+ *
+ */
+
+sensible.MDNS.prototype.stop = function ()
+{
+	this.stopPolling ();
+	this.strategy.close ();
+}
+
+/**
+ * Register a host for proxy MDNS A record resolution.
+ * Note we leave names alone, we don't remove .local or anything like that.
+ *
+ * @param {string} inName - name to proxy resolve, eg printer.local
+ * @param {string} inHost - host to proxy resolve, eg 10.0.1.10
+ */
+
+sensible.MDNS.prototype.registerHost = function (inName, inHost)
+{
+	var	name = inName.toLowerCase ();
+	
+	if (this.hostsByName [name])
+	{
+		console.error ("host at " + key + " already registered...");
+		return null;
+	}
+
+	// passing null or undefined for the host means "just get it"
+	if (inHost == null || inHost.length == 0)
+	{
+		inHost = this.localService.host;
+	}
+
+	this.hostsByName [name] = inHost;
+	
+	return name;
+}
+
+/**
+ * Register a service for proxy MDNS PTR record resolution.
+ *
+ * @param {string} inName - human readable service name, eg My Printer
+ * @param {string} inType - type of service, eg _printer._tcp.local
+ * @param {string} inHost - host of service, eg 10.0.1.10
+ * @param {integer} inPort - port number of service, eg 2000
+ * @param {string} inTXTRecord - optional text record to additionally serve
+ */
+
+sensible.MDNS.prototype.registerService = function (inName, inType, inHost, inPort, inTXTRecord, inTTL)
+{
+	console.log ("sensible.MDNS.registerService(" + inName + ")");
+	
+	// passing null or undefined for the host means "just get it"
+	if (inHost == null || inHost.length == 0)
+	{
+		inHost = this.localService.host;
+	}
+	
+	// note the key is just the host and port
+	// that's really the unique combo
+	var	key = inHost + ":" + inPort;
+	
+	if (this.servicesByKey [key])
+	{
+		console.error ("service at " + key + " already registered...");
+		return null;
+	}
+	
+	var	lowerCaseType = inType.toLowerCase ();
+	
+	var	service = 
+	{
+		name: inName,
+		type: lowerCaseType,
+		host: inHost,
+		port: inPort,
+		text: inTXTRecord,
+		ttl: inTTL ? inTTL : this.defaultTTL
+	};
+	
+	this.servicesByKey [key] = service;
+
+	if (this.servicesByType [lowerCaseType])
+	{
+		// there can't be a dupe, we'd have found it above
+		// so just add to the existing list
+	}
+	else
+	{
+		this.servicesByType [lowerCaseType] = new Array ();
+	}
+	
+	this.servicesByType [lowerCaseType].push (service);
+
+	// ensure that everyone has up to date info
+	this.sendPTRResponse (service);
+
+	return service;
+}
+
+/**
+ * Request notification of name to host resolutions.
+ *
+ * @param {string} inName - name to resolve, eg printer.local
+ * @param {function} inCallback - function to call on resolution
+ * @returns {object} object to provide to unresolveHost() call to cancel
+ */
+
+sensible.MDNS.prototype.resolveHost = function (inName, inAddCallback, inRemoveCallback)
+{
+	var	lowerCaseName = inName.toLowerCase ();
+	var	resolutions = this.hostResolutionsByName [lowerCaseName];
+	
+	if (!resolutions)
+	{
+		resolutions = new Array ();
+		this.hostResolutionsByName [lowerCaseName] = resolutions;
+	}
+	
+	var	resolution = 
+	{
+		name: lowerCaseName,
+		addCallback: inAddCallback,
+		removeCallback: inRemoveCallback,
+		hosts: new Object ()
+	};
+	
+	resolutions.push (resolution);
+	
+	this.sendARequest (lowerCaseName);
+	
+	return resolution;
+}
+
+/**
+ * Request notification of service resolutions.
+ *
+ * @param {string} inType - type to resolve, eg _printer._tcp.local
+ * @param {function} inCallback - function to call on resolution
+ * @returns {object} object to provide to unresolveService() call to cancel
+ */
+sensible.MDNS.prototype.resolveService = function (inType, inAddCallback, inRemoveCallback)
+{
+	console.log ("MDNS.resolveService(" + inType + ")");
+	
+	var	lowerCaseType = inType.toLowerCase ();
+	var	resolutions = this.serviceResolutionsByType [lowerCaseType];
+	
+	if (!resolutions)
+	{
+		resolutions = new Array ();
+		this.serviceResolutionsByType [lowerCaseType] = resolutions;
+	}
+	
+	var	resolution = 
+	{
+		type: lowerCaseType,
+		addCallback: inAddCallback,
+		removeCallback: inRemoveCallback,
+		services: new Object ()
+	};
+	
+	resolutions.push (resolution);
+	
+	this.sendPTRRequest (lowerCaseType);
+	
+	return resolution;
+}
+
+/**
+ * Cancel notification of host resolutions.
+ *
+ * @param {string} inName - name to cancel resolution, eg printer.local
+ */
+sensible.MDNS.prototype.unregisterHost = function (inName)
+{
+	var	unregistered = false;
+	
+	var	host = this.hostsByName [inName.toLowerCase ()];
+	
+	if (host)
+	{
+		unregistered = true;
+		delete this.hostsByName [name];
+	}
+	else
+	{
+		console.error ("name " + name + " not registered...");
+	}
+	
+	return unregistered;
+}
+
+/**
+ * Cancel the advertisement of a service.
+ *
+ * @param {string} inHost - host of service to cancel, eg 10.0.1.10
+ * @param {integer} inPort - port number of service to cancel, eg 2000
+ */
+sensible.MDNS.prototype.unregisterService = function (inHost, inPort)
+{
+	var	unregistered = false;
+	
+	// passing null or undefined for the host means "just get it"
+	if (inHost == null || inHost.length == 0)
+	{
+		inHost = this.localService.host;
+	}
+	
+	var	key = inHost + ":" + inPort;
+	
+	var	service = this.servicesByKey [key];
+
+	if (service)
+	{
+		unregistered = true;
+		
+		// service.type is lowercased by register()
+		var	services = this.servicesByType [service.type];
+		
+		for (var i = 0; i &lt; services.length; i++)
+		{
+			if (services [i].host == inHost &amp;&amp; services [i].port == inPort)
+			{
+				services.splice (i, 1);
+				break;
+			}
+		}
+
+		delete this.servicesByKey [key];
+	}
+	else
+	{
+		console.error ("service " + key + " not registered...");
+	}
+	
+	return unregistered;
+}
+
+// CALLBACKS
+
+/**
+ * Called by the configured strategy upon receipt of a packet.
+ *
+ * @private
+ * @param {ArrayBuffer} inPacketBuffer - packet
+ * @param {string} inRemoteHost - originating host, eg 10.0.1.11
+ * @param {integer} inRemotePort - originating port, eg 2000
+ */
+sensible.MDNS.prototype.onPacketReceived = function (inPacketBuffer, inRemoteHost, inRemotePort)
+{
+	var	packet = sensible.DNSPacket.parse (inPacketBuffer);
+	
+	if (packet.flags &amp; 0x8000)
+	{
+		// this is a response
+		if (packet.answers.length > 0)
+		{
+			var	answer = null;
+			
+			for (var i = 0; i &lt; packet.answers.length; i++)
+			{
+				// dns record type 1 = A
+				if (packet.answers [i].type == 1)
+				{
+					answer = packet.answers [i];
+
+					var	lowerCaseName = answer.name.toLowerCase ();
+					// console.log ("received A response for " + lowerCaseName);
+					
+					var	resolutions = this.hostResolutionsByName [lowerCaseName];
+					
+					if (resolutions)
+					{
+						var	host = this.getHostInfo (answer);
+						this.foundHosts [lowerCaseName] = host;
+						
+						// find outstanding resolutions for this host
+						for (var i = 0; i &lt; resolutions.length; i++)
+						{
+							if (resolutions [i].addCallback)
+							{
+								if (resolutions [i].hosts [host.key])
+								{
+									// this client already knows about this host
+									// console.log ("client already knows about host " + host.key);
+								}
+								else
+								{
+									resolutions [i].addCallback (host);
+								}
+							}
+						}
+					}
+				}
+				else
+				// dns record type 12 = PTR
+				if (packet.answers [i].type == 12)
+				{
+					answer = packet.answers [i];
+
+					var	lowerCaseType = answer.name.toLowerCase ();
+					// console.log ("received PTR response for " + lowerCaseType);
+					
+					// are we tracking this type?
+					var	resolutions = this.serviceResolutionsByType [lowerCaseType];
+					
+					if (resolutions)
+					{
+						// ok, remix the packet into something sensible
+						var	service = this.getServiceInfo (packet, inRemoteHost, lowerCaseType);
+						this.foundServices [service.key] = service;
+					
+						for (var i = 0; i &lt; resolutions.length; i++)
+						{
+							if (resolutions [i].addCallback)
+							{
+								if (resolutions [i].services [service.key])
+								{
+									// this client already knows about this service
+									console.log ("client already knows about service " + service.key);
+								}
+								else
+								{
+									resolutions [i].services [service.key] = true;
+									resolutions [i].addCallback (service);
+								}
+							}
+						}
+					}
+					else
+					{
+						// i think the system works well enough to remove this log now :-)
+						// console.log ("no resolutions outstanding for " + lowerCaseType);
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		// this is a request, possibly
+		if (packet.questions.length > 0)
+		{
+			var	question = packet.questions [0];
+		
+			// dns record type 1 = A
+			if (question.type == 1)
+			{
+				var	hostName = question.name.toLowerCase ();
+				// console.log ("received A request for " + hostName);
+
+				// console.log ("request for A record for " + hostName);
+
+				// console.log ("checking " + hostName + " against " + this.localService.name);
+				
+				if (hostName == this.localService.name)
+				{
+					this.sendAResponse (hostName, this.localService.host);
+				}
+				else
+				{
+					// could be a proxy host registration for someone else...
+					var	host = this.hostsByName [hostName];
+					
+					if (host)
+					{
+						this.sendAResponse (hostName, host);
+					}
+				}
+			}
+			else
+			// dns record type 12 = PTR
+			if (question.type == 12)
+			{
+				// service type should be something like _appletv._tcp.local
+				var	lowerCaseType = question.name.toLowerCase ();
+				// console.log ("received PTR request for " + lowerCaseType);
+
+				// console.log ("received request for type " + lowerCaseType + " with length " + inPacketBuffer.byteLength);
+	
+				var	services = this.servicesByType [lowerCaseType];
+				
+				if (services)
+				{
+					// console.log ("found " + services.length + " services registered for " + lowerCaseType);
+	
+					for (var i = 0; i &lt; services.length; i++)
+					{
+						this.sendPTRResponse (services [i]);
+					}
+				}
+			}
+		}
+	}
+	
+	return packet;	
+}
+
+// PRIVATE
+
+/**
+ * Inform the clients of this host that it has been removed.
+ *
+ * @private
+ * @param {object} inHost - host to expire
+ */
+
+sensible.MDNS.prototype.expireHost = function (inHost)
+{
+	var	resolutions = this.hostResolutionsByName [inHost.name];
+	
+	if (resolutions)
+	{
+		for (var i = 0; i &lt; resolutions.length; i++)
+		{
+			if (resolutions [i].removeCallback)
+			{
+				resolutions [i].removeCallback (inHost);
+			}
+		}
+	}
+}
+
+/**
+ * Inform the clients of this service that it has been removed.
+ *
+ * @private
+ * @param {object} inService - service to expire
+ */
+
+sensible.MDNS.prototype.expireService = function (inService)
+{
+	var	resolutions = this.serviceResolutionsByType [inService.type];
+	
+	if (resolutions)
+	{
+		for (var i = 0; i &lt; resolutions.length; i++)
+		{
+			if (resolutions [i].removeCallback)
+			{
+				resolutions [i].removeCallback (inService);
+			}
+		}
+	}
+}
+
+/**
+ * Remove any hosts whose TTL has expired, informing their clients.
+ * The assumption is that the TTL period is greater than the polling period.
+ *
+ * @private
+ */
+
+sensible.MDNS.prototype.expireHosts = function ()
+{
+	var	now = new Date ().getTime ();
+	
+	for (var name in this.foundHosts)
+	{
+		var	host = this.foundHosts [name];
+		
+		// each service has a TTL and a timestamp when it was last discovered
+		// so combine the two to find the expiry in ms, and check...
+		var	expiryTime = host.timestamp + (host.ttl * 1000);
+		
+		if (expiryTime &lt; now)
+		{
+			console.log ("expiring service: " + key);
+			
+			this.expireHost (service);
+			
+			delete this.foundHosts [key];
+		}
+	}
+}
+
+/**
+ * Remove any services whose TTL has expired, informing their clients.
+ * The assumption is that the TTL period is greater than the polling period.
+ *
+ * @private
+ */
+
+sensible.MDNS.prototype.expireServices = function ()
+{
+	var	now = new Date ().getTime ();
+	
+	for (var key in this.foundServices)
+	{
+		var	service = this.foundServices [key];
+		
+		// each service has a TTL and a timestamp when it was last discovered
+		// so combine the two to find the expiry in ms, and check...
+		var	expiryTime = service.timestamp + (service.ttl * 1000);
+		
+		if (expiryTime &lt; now)
+		{
+			console.log ("expiring service: " + key);
+			
+			this.expireService (service);
+			
+			delete this.foundServices [key];
+		}
+	}
+}
+
+/**
+ * Extract the pertinent information from an A type DNS packet.
+ *
+ * @private
+ * @param {ArrayBuffer} inPacketBuffer - packet
+ * @returns {object} object containing name, address, and TTL
+ */
+
+sensible.MDNS.prototype.getHostInfo = function (inARecord)
+{
+	// note the default TTL should be more than the polling period (60 seconds)
+	// we set it to five minutes, here
+	var	host = 
+	{
+		name: inARecord.name.toLowerCase (),
+		address: inARecord.a,
+		ttl: inARecord.ttl,
+		rdata: inARecord.rdata,
+		timestamp: new Date ().getTime ()
+	};
+	
+	if ((host.ttl * 1000) &lt; this.pollingPeriod)
+	{
+		host.ttl = this.defaultTTL;
+	}
+
+	// abstracting how we make the key == good
+	host.key = host.name;
+	
+	return host;
+}
+
+	
+/**
+ * Extract the pertinent information from a PTR type DNS packet.
+ *
+ * @private
+ * @param {ArrayBuffer} inPacketBuffer - packet
+ * @param {string} inRemoteHost - originating host, eg 10.0.1.11
+ * @param {string} inType - type of resolution, eg _printer._tcp.local
+ * @returns {object} object containing name, type, host, port, text, and TTL
+ */
+
+sensible.MDNS.prototype.getServiceInfo = function (inPacket, inRemoteHost, inType)
+{
+	// note the default TTL should be more than the polling period (60 seconds)
+	// we set it to five minutes, here
+	var	service = 
+	{
+		name: "",
+		type: inType,
+		host: inRemoteHost,
+		port: 0,
+		text: "",
+		ttl: this.defaultTTL,
+		timestamp: new Date ().getTime ()
+	};
+	
+	var	updatedTTL = false;
+	
+	for (var i = 0; i &lt; inPacket.answers.length; i++)
+	{
+		var	answer = inPacket.answers [i];
+		
+		if (answer.type == 12)
+		{
+			// PTR record
+			
+			// help out a little here by separating the name from the type
+			// the packet combines, but IMHO it's more useful separate
+			// remember the stray delimiter between the name &amp; type
+			service.name = answer.ptr.replace ("." + inType, "");
+			service.ttl = answer.ttl;
+			
+			updatedTTL = true;
+		}
+		else if (answer.type == 16)
+		{
+			// TXT record
+			service.text = answer.txt;
+
+			// don't override the PTR record's TTL
+			if (!updatedTTL)
+			{
+				service.ttl = answer.ttl;
+			}
+		}
+	}
+	
+	if ((service.ttl * 1000) &lt; this.pollingPeriod)
+	{
+		service.ttl = this.defaultTTL;
+	}
+	
+	// now trawl the additionals for extra bits
+	for (var i = 0; i &lt; inPacket.additionals.length; i++)
+	{
+		var	additional = inPacket.additionals [i];
+		
+		if (additional.type == 1)
+		{
+			// A record
+			service.host = additional.a;
+		}
+		else if (additional.type == 16)
+		{
+			// TXT record
+			
+			// but if we got a TXT in the answer, don't override it here
+			if (service.text == null || service.text.length == 0)
+			{
+				service.text = additional.txt;
+			}
+		}
+		else if (additional.type == 33)
+		{
+			// SRV record
+			service.port = additional.port;
+		}
+	}
+	
+	// rig up a unique key
+	service.key = service.name  + "." + service.type + ":" + service.host + ":" + service.port;
+	
+	return service;
+}
+
+sensible.MDNS.prototype.makeARecord = function (inService)
+{
+	// add an A additional for the host
+	var	hostElements = inService.host.split (".");
+	var	aBuffer = new ArrayBuffer (4);
+	var	aView = new Uint8Array (aBuffer);
+	
+	for (var j = 0; j &lt; 4; j++)
+	{
+		var	digit = parseInt (hostElements [j]);
+		aView [j] = digit;
+	}
+
+	var	aRecord = 
+	{
+		name: inService.name,
+		type: 1,
+		clas: 1,
+		ttl: this.defaultTTL,
+		rdata: aView
+	};
+
+	return aRecord;
+}
+
+sensible.MDNS.prototype.makeHostNSECRecord = function ()
+{
+	// calculate the size of the buffer
+	var	hostName = this.strategy.getHostName ();
+	var	length = 1 + hostName.length + 1;
+	
+	// 1 for the window block number (0)
+	// 1 for the block length (4 for a host NSEC record)
+	// 4 bytes of bitmap shit
+	length += 6;
+
+	var	buffer = new ArrayBuffer (length);
+	var	view = new Uint8Array (buffer);
+	
+	var	offset = 0;
+	
+	var	nameElements = hostName.split (".");
+	
+	for (var i = 0; i &lt; nameElements.length; i++)
+	{
+		var	nameElement = nameElements [i];
+		
+		view [offset++] = nameElement.length;
+		
+		for (var j = 0; j &lt; nameElement.length; j++)
+		{
+			view [offset++] = nameElement.charCodeAt (j);
+		}
+	}
+	
+	// terminating the name
+	view [offset++] = 0;
+	
+	// window block 0 &amp; length
+	view [offset++] = 0;
+	view [offset++] = 4;
+	
+	// bitmap for RR types 1 and 28
+	view [offset++] = 0x40;
+	view [offset++] = 0;
+	view [offset++] = 0;
+	view [offset++] = 0x08;
+	
+	if (offset != length)
+	{
+		console.log ("makeHostNSECRecord() offset length error");
+		console.log ("offset is " + offset + ", but length is " + length);
+	}
+	
+	var	record = 
+	{
+		name: this.strategy.getHostName (),
+		type: 47,
+		clas: 1,
+		ttl: this.defaultTTL,
+		rdata: view
+	}
+	
+	return record;
+}
+
+// HACK
+sensible.MDNS.prototype.makeServiceNSECRecord = function (inService)
+{
+	// calculate the size of the buffer
+	var	fullServiceName = inService.name + "." + inService.type.toLowerCase ();
+	var	length = 1 + fullServiceName.length + 1;
+	
+	// 1 for the window block number (0)
+	// 1 for the block length (4 for a host NSEC record)
+	// 5 bytes of bitmap shit
+	length += 7;
+
+	var	buffer = new ArrayBuffer (length);
+	var	view = new Uint8Array (buffer);
+	
+	var	offset = 0;
+	
+	var	nameElements = fullServiceName.split (".");
+	
+	for (var i = 0; i &lt; nameElements.length; i++)
+	{
+		var	nameElement = nameElements [i];
+		
+		view [offset++] = nameElement.length;
+		
+		for (var j = 0; j &lt; nameElement.length; j++)
+		{
+			view [offset++] = nameElement.charCodeAt (j);
+		}
+	}
+	
+	// terminating the name
+	view [offset++] = 0;
+	
+	// window block 0 &amp; length
+	view [offset++] = 0;
+	view [offset++] = 5;
+	
+	// bitmap for RR types 16 and 33
+	view [offset++] = 0;
+	view [offset++] = 0;
+	view [offset++] = 0x80;
+	view [offset++] = 0;
+	view [offset++] = 0x40;
+	
+	if (offset != length)
+	{
+		console.log ("makeServiceNSECRecord() offset length error");
+		console.log ("offset is " + offset + ", but length is " + length);
+	}
+	
+	var	record = 
+	{
+		name: inService.name + "." + inService.type.toLowerCase (),
+		type: 47,
+		clas: 1,
+		ttl: 120,
+		rdata: view
+	}
+	
+	return record;
+}
+
+sensible.MDNS.prototype.makePTRRecord = function (inService)
+{
+	var	fullServiceName = inService.name + "." + inService.type.toLowerCase ();
+
+	var	ptrBuffer = new ArrayBuffer (1 + fullServiceName.length + 1);
+	var	ptrView = new Uint8Array (ptrBuffer);
+	
+	var	offset = 0;
+	
+	// god i fucking hate this format
+	var	nameElements = fullServiceName.split (".");
+	
+	for (var i = 0; i &lt; nameElements.length; i++)
+	{
+		var	nameElement = nameElements [i];
+		
+		ptrView [offset++] = nameElement.length;
+		
+		for (var j = 0; j &lt; nameElement.length; j++)
+		{
+			ptrView [offset++] = nameElement.charCodeAt (j);
+		}
+	}
+
+	ptrView [offset++] = 0;
+
+	var	ptrRecord =
+	{
+		name: inService.type.toLowerCase (),
+		type: 12,
+		clas: 1,
+		ttl: inService.ttl,
+		rdata: ptrView
+	};
+	
+	return ptrRecord;
+}
+
+// ok, this rogered things for a while
+// the NAME of the SRV record should be the full service name
+// the RDATA should be the port etc and the HOST NAME, not the service name
+sensible.MDNS.prototype.makeSRVRecord = function (inService)
+{
+	// denormalise the server name, fuck the compression
+	var	serverName = this.strategy.getHostName ();
+
+	// add an SRV additional for the port (sigh)
+	// priority, weight, port, length byte, service name + .local + trailing zero
+	var	srvSize = 6 + 1 + serverName.length + 1;
+	var	srvBuffer = new ArrayBuffer (srvSize);
+	var	srvView = new Uint8Array (srvBuffer);
+	
+	// priority &amp; weight are zero
+	var	offset = 0;
+	srvView [offset++] = 0;
+	srvView [offset++] = 0;
+	srvView [offset++] = 0;
+	srvView [offset++] = 0;
+	
+	// port
+	srvView [offset++] = inService.port >> 8;
+	srvView [offset++] = inService.port &amp; 0xff;
+	
+	// god i fucking hate this format
+	var	nameElements = serverName.split (".");
+	
+	for (var i = 0; i &lt; nameElements.length; i++)
+	{
+		var	nameElement = nameElements [i];
+		
+		srvView [offset++] = nameElement.length;
+		
+		for (var j = 0; j &lt; nameElement.length; j++)
+		{
+			srvView [offset++] = nameElement.charCodeAt (j);
+		}
+	}
+
+	srvView [offset++] = 0;
+
+	var	srvRecord = 
+	{
+		name: inService.name + "." + inService.type.toLowerCase (),
+		type: 33,
+		clas: 1,
+		ttl: 120,
+		rdata: srvView
+	};
+
+	return srvRecord;
+}
+
+sensible.MDNS.prototype.makeTXTRecord = function (inService)
+{
+	if (inService.text == null)
+	{
+		// this happens all the time
+		inService.text = "";
+	}
+	
+	var	txtBuffer = new ArrayBuffer (1 + inService.text.length);
+	var	txtView = new Uint8Array (txtBuffer);
+	
+	var	offset = 0;
+	
+	txtView [offset++] = inService.text.length;
+	
+	// this is TXT, so we can not do the fucked format
+	for (var i = 0; i &lt; inService.text.length; i++)
+	{
+		txtView [offset++] = inService.text.charCodeAt (i);
+	}
+
+	var	txt =
+	{
+		name: inService.name + "." + inService.type.toLowerCase (),
+		type: 16,
+		clas: 1,
+		ttl: inService.ttl,
+		rdata: txtView
+	};
+	
+	return txt;
+}
+
+sensible.MDNS.prototype.logPacket = function (inPacket)
+{
+	console.log ("LOG PACKET");
+	console.log ("id = " + inPacket.id);
+	console.log ("flags = " + inPacket.flags.toString (16));
+	console.log ("qucount = " + inPacket.questions.length);
+	console.log ("ancount = " + inPacket.answers.length);
+	console.log ("aucount = " + inPacket.authorities.length);
+	console.log ("adcount = " + inPacket.additionals.length);
+
+	for (var i = 0; i &lt; inPacket.questions.length; i++)
+	{
+		var	question = inPacket.questions [i];
+		
+		console.log ("question " + i);
+		console.log ("name = " + question.name);
+	}
+
+	for (var i = 0; i &lt; inPacket.answers.length; i++)
+	{
+		var	answer = inPacket.answers [i];
+		
+		console.log ("ANSWER " + i);
+		console.log ("name = " + answer.name);
+		console.log ("type = " + answer.type);
+		console.log ("class = " + answer.clas);
+		console.log ("ttl = " + answer.ttl);
+
+		if (answer.type == 1)
+		{
+			console.log ("address = " + answer.a);
+		}
+		else
+		if (answer.type == 12)
+		{
+			console.log ("ptr = " + answer.ptr);
+		}
+		else
+		if (answer.type == 16)
+		{
+			console.log ("text = " + answer.txt);
+		}
+		else
+		if (answer.type == 28)
+		{
+			console.log ("aaaa = " + answer.aaaa);
+		}
+		else
+		if (answer.type == 33)
+		{
+			console.log ("port = " + answer.port);
+		}
+		else
+		{
+			console.log ("unknown answer type " + answer.type);
+		}
+	}
+	
+	for (var i = 0; i &lt; inPacket.additionals.length; i++)
+	{
+		var	additional = inPacket.additionals [i];
+		
+		console.log ("ADDITIONAL " + i);
+		console.log ("name = " + additional.name);
+		console.log ("type = " + additional.type);
+		console.log ("ttl = " + additional.ttl);
+
+		if (additional.type == 1)
+		{
+			console.log ("address = " + additional.a);
+		}
+		else
+		if (additional.type == 12)
+		{
+			console.log ("ptr = " + additional.ptr);
+		}
+		else
+		if (additional.type == 16)
+		{
+			console.log ("text = " + additional.txt);
+		}
+		else
+		if (additional.type == 28)
+		{
+			console.log ("aaaa = " + additional.aaaa);
+		}
+		else
+		if (additional.type == 33)
+		{
+			console.log ("port = " + additional.port);
+		}
+		else
+		if (additional.type == 47)
+		{
+			if (false)
+			{
+				console.log ("nsec hack name = " + additional.name);
+			}
+			else
+			{
+				console.log ("nsec name = " + additional.nsec.name);
+				
+				for (var j = 0; j &lt; additional.nsec.windows.length; j++)
+				{
+					var	window = additional.nsec.windows [j];
+	
+					console.log ("nsec window " + window.number);
+					console.log ("nsec types " + window.types);
+				}
+			}
+		}
+		else
+		{
+			console.log ("unknown answer type " + additional.type);
+		}
+	}
+}
+
+sensible.MDNS.prototype.sendARequest = function (inName)
+{
+	// console.log ("sending question for " + inType);
+	
+	var	packet = new sensible.DNSPacket ();
+	packet.id = 0;
+	packet.flags = 0;
+	
+	var	question =
+	{
+		name: inName,
+		type: 1,
+		clas: 1
+	}
+	
+	packet.questions.push (question);
+
+	var	buffer = packet.serialise ();
+	this.strategy.send (buffer, "224.0.0.251", 5353);
+}
+
+sensible.MDNS.prototype.sendAResponse = function (inName, inHost)
+{
+	var	packet = new sensible.DNSPacket ();
+	packet.id = 0;
+	packet.flags = 0x8400;
+	
+	var	service = null;
+	
+	if (inName)
+	{
+		service =
+		{
+			name: inName,
+			host: inHost
+		};
+	}
+	else
+	{
+		service = this.localService;
+	}
+	
+	packet.answers.push (this.makeARecord (service));
+
+	// console.log ("sending A response for " + service.name + " (" + service.host + ")");
+	
+	var	buffer = packet.serialise ();
+	this.strategy.send (buffer, "224.0.0.251", 5353);
+}
+
+sensible.MDNS.prototype.sendPTRRequest = function (inType)
+{
+	console.log ("sending question for " + inType);
+	
+	var	packet = new sensible.DNSPacket ();
+	packet.id = 0;
+	packet.flags = 0;
+	
+	var	question =
+	{
+		name: inType,
+		type: 12,
+		clas: 1
+	}
+	
+	packet.questions.push (question);
+
+	var	buffer = packet.serialise ();
+	this.strategy.send (buffer, "224.0.0.251", 5353);
+}
+
+sensible.MDNS.prototype.sendPTRResponse = function (inService)
+{
+	var	packet = new sensible.DNSPacket ();
+	packet.id = 0;
+	packet.flags = 0x8400;
+
+	packet.answers.push (this.makePTRRecord (inService));
+	packet.additionals.push (this.makeARecord (inService));
+	packet.additionals.push (this.makeTXTRecord (inService));
+	packet.additionals.push (this.makeSRVRecord (inService));
+	// packet.additionals.push (this.makeHostNSECRecord (inService));
+	// packet.additionals.push (this.makeServiceNSECRecord (inService));
+
+	var	buffer = packet.serialise ();
+
+	this.strategy.send (buffer, "224.0.0.251", 5353);
+}
+
+/**
+ * Poll to refresh the type and host tables.
+ * Simplistic, but it works.
+ * The only issue is that the polling period has to be less than TTL.
+ */
+
+sensible.MDNS.prototype.startPolling = function ()
+{
+	var	self = this;
+	
+	this.poller = setInterval
+	(
+		function ()
+		{
+			for (var type in self.serviceResolutionsByType)
+			{
+				self.sendPTRRequest (type);
+			}
+
+			for (var name in self.addressResolutionsByType)
+			{
+				self.sendARequest (name);
+			}
+			
+			self.expireHosts ();
+			self.expireServices ();
+		},
+		this.pollingPeriod
+	);
+}
+
+sensible.MDNS.prototype.stopPolling = function ()
+{
+	if (this.poller)
+	{
+		clearInterval (this.poller);
+		this.poller = null;
+	}
+	else
+	{
+		console.log ("stopPolling() called with no poller task");
+	}
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="sensible.Application.html">Application</a></li><li><a href="sensible.fxos.Strategy.html">Strategy</a></li><li><a href="sensible.MDNS.html">MDNS</a></li><li><a href="sensible.node.Server.html">Server</a></li><li><a href="sensible.node.Strategy.html">Strategy</a></li><li><a href="sensible.node.WebServer.html">WebServer</a></li><li><a href="sensible.Strategy.html">Strategy</a></li></ul><h3>Global</h3><ul><li><a href="global.html#sensible">sensible</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Wed Dec 17 2014 17:11:11 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

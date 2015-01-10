@@ -1,0 +1,7 @@
+{
+	"name" : "Jukebox",
+	"type" : "_sensible._tcp.local",
+	"port" : 3003,
+	"description" : "Main jukebox in the living room",
+	"hostname" : "jukebox.local"
+}

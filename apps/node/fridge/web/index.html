@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Fridge</title>
+
+<meta name="viewport" content="width=device-width">
+
+<!-- styles -->
+
+<link href="positron/positron.css" type="text/css" rel="stylesheet"></link>
+<link href="base.css" type="text/css" rel="stylesheet"></link>
+
+<style>
+
+.alert {
+	width: 200px;
+	height: 100px;
+	line-height: 100px;
+	text-align: center;
+	border: 1px dashed #999;
+}
+
+</style>
+
+<!-- scripts -->
+
+<script src="positron/prefixfree.min.js" type="text/javascript"></script>
+<script src="positron/prefixfree.dynamic-dom.min.js" type="text/javascript"></script>
+<script src="positron/positron.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+	<p-json url="config/get" name="config">
+		<p-set name="page.devicename" value="$config.name;" context="application"></p-set>
+		<p-json url="properties/get" name="properties">
+			<h4>I am your $config.name;</h4>
+			
+			<div p-view="alert" class="alert"
+				p-action-1="(click)hideview:alert">
+				Fridge door is open!
+			</div>	
+			
+			<form
+				p-action-1="(submit) ajaxform"
+				p-action-2="(p-ajaxformsuccess) showview: updated"
+				action="properties/set"
+				method="GET"
+				>
+				<p-list key="properties" name="property">
+					<p-set name="params.value" value="$property.value;">
+						<div>$property.name; = <span p-view="property_$property.name;:">$params.value;</span></div>
+					</p-set>
+					<p-if true="$property.type; == integer">
+						$property.minimum;
+						<input
+							p-action-1="(change) refreshview: property_$property.name;"
+							class="config-integer" name="$property.name;" type="range"
+							value="$property.value;" min="$property.minimum;" max="$property.maximum;"
+						>
+						$property.maximum;
+					</p-if>
+					<p-if true="$property.type; == string">
+						<input
+							class="config-string" name="$property.name;" type="text" maxlength="$property.maxlength;"
+							value="$property.value;"
+						>
+					</p-if>
+										
+					<p-if true="$property.type; == toggle">
+						<div class="toggleswitch">
+							<input type="checkbox" name="$property.name;" class="config-toggle toggleswitch-checkbox" id="$property.name;" checked>
+							<label class="toggleswitch-label" for="$property.name;">
+								<span class="toggleswitch-inner"></span>
+								<span class="toggleswitch-switch"></span>
+							</label>
+						</div>
+					</p-if>
+					
+					<p-if true="$property.type; == button">
+						<button class="config-button" name="$property.name;" value="$property.value;">$property.value;</button>
+					</p-if>
+					
+					
+				</p-list>
+				<div>
+					<input name="submit" type="submit" value="submit">
+				</div>
+			</form>
+			<div p-view="updated:" class="p-invisible">
+				$page.devicename; updated successfully!
+			</div>
+		</p-json>
+	</p-json>
+	
+</body>
+
+</html>

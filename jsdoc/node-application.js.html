@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: node-application.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: node-application.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file NodeApplication
+ * @copyright Monohm, Inc. 2014
+ */
+
+sensible.provide ("sensible.node.Application");
+
+sensible.node.Application = function (inCallback)
+{
+	sensible.Application.call (this, inCallback);
+}
+sensible.inherits (sensible.node.Application, sensible.Application);
+
+// SENSIBLE_APPLICATION IMPLEMENTATION
+
+// override to load the config from the hardware
+// we assume the load() is async for safety reasons!
+sensible.node.Application.prototype.loadConfig = function (inCallback)
+{
+	var	self = this;
+	
+	fs.readFile
+	(
+		"sensible-config.json",
+		function (inError, inContents)
+		{
+			var	error = inError;
+			
+			if (inContents)
+			{
+				try
+				{
+					self.config = JSON.parse (inContents);
+				}
+				catch (inError)
+				{
+					error = inError;
+				}
+			}
+			
+			if (inCallback)
+			{
+				inCallback (error);
+			}
+		}
+	);
+}
+
+sensible.node.Application.prototype.loadProperties = function (inCallback)
+{
+	var	self = this;
+	
+	fs.readFile
+	(
+		"sensible-properties.json",
+		function (inError, inContents)
+		{
+			var	error = inError;
+			
+			if (inContents)
+			{
+				try
+				{
+					self.properties = JSON.parse (inContents);
+			
+					self.propertiesByKey = new Object ();
+					
+					// sort the property key cache
+					for (var i = 0; i &lt; self.properties.length; i++)
+					{
+						var	property = self.properties [i];
+						self.propertiesByKey [property.name] = property;
+					}
+				}
+				catch (inError)
+				{
+					error = inError;
+				}
+			}
+			
+			if (inCallback)
+			{
+				inCallback (error);
+			}
+		}
+	);
+}
+
+sensible.node.Application.prototype.registerHost =
+function node_Application_registerHost (inCallback)
+{
+	console.log ("node.Application.registerHost()");
+	
+	if (this.config.hostname)
+	{
+		this.mdns.registerHost (this.config.hostname, null);
+	}
+
+	if (inCallback)
+	{
+		inCallback ();
+	}
+}
+
+sensible.node.Application.prototype.registerService = function (inCallback)
+{
+	var	service = this.mdns.registerService
+		(this.config.name, this.config.type, null, this.config.port, this.config.description, this.config.ttl);
+
+	console.log ("server advertised as "
+		+ service.name + "." + service.type + ":" + service.host + ":" + service.port);
+
+	if (inCallback)
+	{
+		inCallback ();
+	}
+}
+
+// override to save config to the hardware
+// this will be hopefully the same structure as retrieved using loadConfig()
+sensible.node.Application.prototype.saveConfig = function ()
+{
+	try
+	{
+		// prettyprint the JSON to the file
+		var	config = JSON.stringify (this.config, {}, 2);
+		fs.writeFileSync ("sensible-config.json", json);
+	}
+	catch (inError)
+	{
+		console.error ("unable to write sensible-config.json");
+		console.error (inError);
+	}
+}
+
+// override to save properties to the hardware
+// this will be hopefully the same structure as retrieved using loadProperties()
+sensible.node.Application.prototype.saveProperties = function ()
+{
+	try
+	{
+		// prettyprint the JSON to the file
+		var	json = JSON.stringify (this.properties, {}, 2);
+		fs.writeFileSync ("sensible-properties.json", json);
+	}
+	catch (inError)
+	{
+		console.error ("unable to write sensible-properties.json");
+		console.error (inError);
+	}
+}
+
+sensible.node.Application.prototype.start =
+function node_Application_start (inCallback)
+{
+	this.startHTTPServer ();
+	
+	this.mdns = new sensible.MDNS ();
+
+	var	self = this;
+	
+	this.mdns.start
+	(
+		function (inError)
+		{
+			if (inError)
+			{
+				inCallback.call (self, inError);
+			}
+			else
+			{
+				self.registerService
+				(
+					function ()
+					{
+						self.registerHost
+						(
+							function ()
+							{
+								inCallback.call (self);
+							}
+						);
+					}
+				);
+			}
+		}
+	);
+}
+
+
+sensible.node.Application.prototype.startHTTPServer = function (inCallback)
+{
+	this.server = new sensible.node.Server (this.config.port, this);
+	
+	if (inCallback)
+	{
+		inCallback ();
+	}
+}
+
+sensible.node.Application.prototype.stop =
+function node_Application_stop ()
+{
+	this.unregisterService ();
+	this.stopHTTPServer ();
+}
+
+sensible.node.Application.prototype.stopHTTPServer = function ()
+{
+	this.server.stop ();
+}
+
+sensible.node.Application.prototype.unregisterHost = function ()
+{
+	if (this.config.hostname)
+	{
+		this.mdns.unregisterHost (this.config.hostname);
+	}
+}
+
+sensible.node.Application.prototype.unregisterService = function ()
+{
+	this.mdns.unregisterService (null, this.config.port);
+}
+
+sensible.node.Application.prototype.onWebSocketOpen = function ()
+{
+}
+
+sensible.node.Application.prototype.onWebSocketClose = function ()
+{
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="sensible.Application.html">Application</a></li><li><a href="sensible.fxos.Strategy.html">Strategy</a></li><li><a href="sensible.MDNS.html">MDNS</a></li><li><a href="sensible.node.Server.html">Server</a></li><li><a href="sensible.node.Strategy.html">Strategy</a></li><li><a href="sensible.node.WebServer.html">WebServer</a></li><li><a href="sensible.Strategy.html">Strategy</a></li></ul><h3>Global</h3><ul><li><a href="global.html#sensible">sensible</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Wed Dec 17 2014 17:11:11 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

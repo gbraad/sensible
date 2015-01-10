@@ -1,0 +1,31 @@
+
+
+{
+	
+	"deferredTriggers" :
+	{
+		"sensible-servicediscovered" : true
+	},
+
+	"actions":
+	{
+	},
+
+	"events":
+	{
+	},
+	
+	"tags" :
+	{
+		"sensible-mdns" : "positron.sensible.tag.MdnsTag",
+		"sensible-services" : "positron.sensible.tag.ServicesTag"
+	},
+	
+	"triggers" :
+	{
+		"sensible-servicediscovered" : "positron.sensible.trigger.ServiceDiscoveredTrigger",
+		"sensible-serviceexpired" : "positron.sensible.trigger.ServiceExpiredTrigger"
+	}
+
+}
+

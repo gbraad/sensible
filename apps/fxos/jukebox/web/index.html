@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Jukebox</title>
+  
+<meta name="viewport" content="width=device-width">
+
+<!-- styles -->
+
+<link href="positron/positron.css" type="text/css" rel="stylesheet"></link>
+
+<style>
+  
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+    font-size: 3vw;
+  }
+  
+  button {
+    font-size: 3vw;
+  }
+  
+  .song-list {
+    position: absolute;
+    top: 10vw;
+    left: 0;
+    width: 97vw;
+    padding-right: 3vw;
+    height: 80vh;
+    overflow: hidden;
+    overflow-y: scroll;
+    text-align: right;
+  }
+  
+  .song-list > div:last-of-type {
+    margin-bottom: 20vh; 
+  }
+  
+  .play-list {
+    position: absolute;
+    bottom: 0vw;
+    left: 0;
+    width: 100vw;
+    height: 17vh;
+    overflow: hidden;
+    overflow-y: scroll;
+    border-top: 1px solid black;
+    z-index: 1000;
+    background: #eee;
+    padding-top: 3vh;
+  }
+  
+  .playlist-debug {
+    font-size: 9px; 
+  }
+  
+  #header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 10vw;
+    text-align: center;
+    background: rgba(30,87,153,1);
+    color: white;
+    box-shadow: 0 2vw 3vw rgba(0,0,0,0.3);
+    z-index: 1000;
+    font-size: 5vw;
+    line-height: 11vw;
+    font-weight: lighter;
+    
+    
+  }
+  
+  .album-title {
+    position: relative;
+    width: 96vw;
+    background: linear-gradient(to bottom, rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+    font-size: 3vw;
+    margin-top: 14vw;
+    text-align: right;
+    padding-right: 4vw;
+    padding-bottom: 5vw;
+    padding-top: 4vw;
+    font-weight: bold;
+    
+  }
+  
+  .album-title:first-of-type {
+    margin-top: 0vw;
+  }
+  
+  .artist-name {
+    font-size: 5vw;
+    font-weight: normal;
+  }
+  
+  .album-name {
+    max-width: 62vw;
+    margin-left: 35vw;
+    text-overflow: ellipsis;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  
+  .album-art {
+    position: absolute;
+    top: 4vw;
+    left: 3vw;
+    width: 30vw;
+    box-shadow: 2vw 2vw 5vw rgba(0,0,0,0.4);
+  }
+  
+  .track-title {
+    margin-top: 2vw; 
+    font-size: 3.5vw;
+  }
+  
+  .track-title > span {
+    
+    max-width: 48vw;
+    text-overflow: ellipsis;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+/*    float: left;*/
+/*    margin-left: 38vw;*/
+    line-height: 4vw;
+    display: inline-block;
+    vertical-align: middle;
+  
+  }
+  
+  .track-title button {
+    margin-top: 1vw;
+    line-height: 5vw;
+  }
+
+</style>
+
+<!-- scripts -->
+
+<script src="positron/positron.js" type="text/javascript"></script>
+<script src="positron/prefixfree.min.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+  <div id="header">Jukebox</div>
+  
+  <div p-view="remotesongs:" class="song-list">
+		<p-set name="currentalbum" value="snack-u-licious" context="page"></p-set>
+		<p-json url="/music/list" name="tracks">
+			<p-list key="tracks" name="track">
+				<p-replace name="cleanalbum" string="$track.album;" replace="\[.*" with=" " all="true" regexp="true">
+					<p-if false="'$cleanalbum;' == '$currentalbum;'">
+						<p-set name="currentalbum" value="$cleanalbum;" context="page">
+						<div class="album-title"> 
+							<div class="artist-name">$track.artist;</div>
+							<div class="album-name">$cleanalbum;</div>
+							<p-json url="http://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=14e58283b570a4f7673dc97457e3b66f&artist=$track.artist;&album=$cleanalbum;&format=json" name="albuminfo">
+								<p-list key="albuminfo.album.image" name="image">
+									<p-if true="$image.size; == extralarge">
+										<p-img class="album-art" src="$image.#text;"/>
+									</p-if>
+								</p-list>
+							</p-json>
+						</div>      
+					</p-if> 
+				</p-replace>  
+					
+				<div class="track-title">
+					$track.title;
+					<!-- note that track.name includes a leading slash -->
+					<p-set name="trackurl" value="$track.url;">
+						<button
+							p-action-1="(click) ajaxget: playlist/add"
+							p-action-1-param-keys="url: trackurl; title: track.title; artist: track.artist; album: track.album;"
+							p-action-2="(p-ajax) refreshview: playlist"
+							>Add</button>
+					</p-set>
+				</div>
+			</p-list>
+		</p-json>
+	</div>
+	
+	<div p-view="localsongs:" class="song-list p-invisible">
+		<div>this is the local song list, yo</div>
+		<p-set name="currentalbum" value="snack-u-licious" context="page"></p-set>
+		<p-json url="http://localhost:3003/music/list" name="tracks">
+			<p-list key="tracks" name="track">
+				<p-replace name="cleanalbum" string="$track.album;" replace="\[.*" with=" " all="true" regexp="true">
+					<p-if false="'$cleanalbum;' == '$currentalbum;'">
+						<p-set name="currentalbum" value="$cleanalbum;" context="page">
+						<div class="album-title"> 
+							<div class="artist-name">$track.artist;</div>
+							<div class="album-name">$cleanalbum;</div>
+							<p-json url="http://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=14e58283b570a4f7673dc97457e3b66f&artist=$track.artist;&album=$cleanalbum;&format=json" name="albuminfo">
+								<p-list key="albuminfo.album.image" name="image">
+									<p-if true="$image.size; == extralarge">
+										<p-img class="album-art" src="$image.#text;"/>
+									</p-if>
+								</p-list>
+							</p-json>
+						</div>      
+					</p-if> 
+				</p-replace>  
+					
+				<div class="track-title">
+					$track.title;
+					<!-- note that track.name includes a leading slash -->
+					<button
+						p-action-1="(click) ajaxget: playlist/add"
+						p-action-1-params="index: $track.meta.index;;"
+						p-action-2="(p-ajax) refreshview: playlist"
+						>Add</button>
+				</div>
+			</p-list>
+		</p-json>
+	</div>
+	
+	<div p-action="(interval: 5s) refreshview: playlist"></div>
+	
+	<div class="play-list">
+<!--
+		<div p-view="songsetselector:" class="song-set-selector">
+			<button
+				p-action-1="(click) showview: remotesongs"
+				p-action-2="(click) hideview: localsongs"
+				>Remote Songs</button>
+			<button
+				p-action-1="(click) refreshview: localsongs"
+				p-action-2="(click) hideview: remotesongs"
+				>Local Songs</button>
+		</div>
+-->
+		<div p-view="playlist:" class="playlist-debug">
+			
+			<div>PLAYLIST</div>
+			<p-json url="/playlist/get" name="tracks">
+				<p-if true="$tracks.length; == 0">
+					<div>nothing in playlist, jukebox will shuffle</div>
+				</p-if>
+				<p-if true="$tracks.length; > 0">
+					<p-list key="tracks" name="track">
+						<div>
+							$track.meta.index;: $track.artist; / $track.album; / $track.title; 
+						</div>
+					</p-list>
+				</p-if>
+			</p-jason>
+		</div>
+	</div>
+</body>
+</html>
+

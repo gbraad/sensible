@@ -1,0 +1,44 @@
+{
+  "name": "Location",
+  "description": "Advertises your location on the local network",
+  "manifest_version": 2,
+  "version": "1.0",
+  "app":
+  {
+  	"background" :
+  	{
+  		"scripts":
+  		[
+  			"background.js"
+  		]
+  	}
+  },
+	"sockets":
+	{
+		"udp":
+		{
+			"bind": "*",
+			"send": "*"
+		},
+		"tcp":
+		{
+			"bind": "*",
+			"connect": "*",
+			"send": "*"
+		},
+		"tcpServer":
+		{
+			"listen": "*"
+		}
+	},
+	"permissions":
+	[
+		"system.network"
+	],
+	"icons":
+	{
+		"128": "images/logo128.png",
+		"16": "images/logo16.png"
+	}
+}
+

@@ -1,0 +1,9 @@
+{
+	"_comment" : "config items, reserved names and types",
+
+	"name" : "Thermostat",
+	"type" : "_sensible._tcp.local",
+	"port" : 3009,
+	"description" : "Thermostat in the hallway",
+	"hostname" : "thermostat.local"
+}

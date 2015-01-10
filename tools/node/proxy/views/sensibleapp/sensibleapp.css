@@ -1,0 +1,75 @@
+.application-frame {
+
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  background: #ccc center no-repeat;
+  background-size: 15vw 15vw;
+  z-index: 1000;
+  pointer-events: all;
+
+/*  border-radius: 100%;*/
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transform: translate3d(0,0,0);
+  transition-duration: 750ms;
+  opacity: 0;
+  transform: rotateX(180deg);
+  transform-origin: 20vw 120vh 0;
+  
+
+}
+
+.application-frame.build-in {
+  transform: rotateX(0deg);
+  opacity: 1;
+}
+
+.application-frame.closing-lens {
+ 
+  transform: rotateX(180deg);
+  opacity: 0;
+  
+}
+
+.application-frame .sensible-app-iframe {
+
+  position: absolute;
+  width: 100vw;
+  height: 92vh;
+  top: 0;
+  left: 0;
+
+/*  border-radius: 100%;*/
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transform: translate3d(0,0,0);
+  border: none;
+
+}
+
+.application-frame .close-lens {
+  
+  position: absolute;
+  top: 92vh;
+  left: 0;
+  width: 100vw;
+  height: 8vh;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  color: white;
+  font-size: 7vh;
+  font-weight: bold;
+  text-align: center;
+  line-height: 8vh;
+  pointer-events: all;
+  opacity: 0; 
+  
+}
+
+.application-frame .close-lens.visible {
+  opacity: 1;
+  pointer-events: all;
+}

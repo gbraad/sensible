@@ -1,0 +1,17 @@
+[
+  {
+    "name": "temperature",
+    "type": "integer",
+    "readonly": false,
+    "maximum": 100,
+    "minimum": -50,
+    "value": -20
+  },
+  {
+    "name": "set tip",
+    "type": "string",
+    "readonly": false,
+    "maxlength": 50,
+    "value": "38%"
+  }
+]

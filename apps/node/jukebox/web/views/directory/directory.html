@@ -1,0 +1,26 @@
+<p-list key="$params.path;" name="file">
+	<p-if true="$file.type; == file">
+		<div
+			p-action-1="(click) ajaxpost: /music/play" p-action-1-params="path: '$file.name;';"
+			p-action-2="(p-ajax) refreshview: song" p-action-2-params="path: '$file.name;';"
+			>
+			<p-join key="file.metadata.artist" name="artist">
+				$artist;/$file.metadata.title;
+			</p-join>
+		</div>
+	</p-if>
+	<p-if true="$file.type; == directory">
+		<p-set name="directorysequence" expression="$directorysequence; + 1" context="page"></p-set>
+		<div
+			p-action="toggleclass: hidden/.directory_$directorysequence;"
+			p-action-params="display: block;"
+			>$file.name; ></div>
+		<div
+			p-view="directory:h"
+			p-view-key="directory_$directorysequence;"
+			p-view-params="path: file.contents"
+			class="directory_$directorysequence; hidden"
+			>
+		</div>
+	</p-if>
+</p-list>

@@ -1,0 +1,9 @@
+{
+	"_comment" : "config items, reserved names and types",
+
+	"name" : "Hue System",
+	"type" : "_sensible._tcp.local",
+	"port" : 3008,
+	"description" : "Smart lights, not the dumb ones",
+	"hostname" : "lights.local"
+}

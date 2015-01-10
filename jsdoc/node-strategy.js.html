@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: node-strategy.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: node-strategy.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file NodeStrategy
+ * @copyright Monohm, Inc. 2014
+ */
+
+sensible.provide ("sensible.node.Strategy");
+
+/**
+ * Implementation of Strategy for the Node platform.
+ *
+ * @class sensible.node.Strategy
+ */
+ 
+sensible.node.Strategy = function ()
+{
+	sensible.Strategy.call (this);
+}
+sensible.inherits (sensible.node.Strategy, sensible.Strategy);
+
+/**
+ * Subscribe the UDP socket to a multicast address.
+ *
+ * @param {string} inMulticastAddress - multicast address to join, eg 224.0.0.251 for MDNS
+ * @param {function} inCallback - function to call on completion
+ */
+
+sensible.node.Strategy.prototype.addMembership = function (inMulticastAddress, inCallback)
+{
+	this.socket.addMembership ("224.0.0.251");
+	
+	if (inCallback)
+	{
+		inCallback ();
+	}
+}
+
+/**
+ * Open the UDP socket and bind to the specified port.
+ * Note only one UDP socket per strategy instance.
+ *
+ * @param {integer} inPort - port to which to bind, eg 5353 for MDNS
+ * @param {function} inCallback - function to call on completion
+ */
+sensible.node.Strategy.prototype.open = function (inPort, inCallback)
+{
+	// console.log ("sensible.node.Strategy.open(" + inPort + ")");
+	
+	this.socket = dgram.createSocket ("udp4");
+
+	// note that later nodes require the address parameter
+	this.socket.bind
+	(
+		inPort,
+		"0.0.0.0",
+		function (inError)
+		{
+			inCallback (inError);
+		}
+	);
+}
+
+/**
+ * Close the UDP socket and bind to the specified port.
+ *
+ * @param {integer} inPort - port to which to bind, eg 5353 for MDNS
+ * @param {function} inCallback - function to call on completion
+ */
+sensible.node.Strategy.prototype.close = function ()
+{
+	this.socket.close ();
+}
+
+/**
+ * Return the host name of the machine.
+ *
+ * @returns {string} host name
+ */
+sensible.node.Strategy.prototype.getHostName = function ()
+{
+	return os.hostname ();
+}
+
+/**
+ * Return the IP address of the machine.
+ *
+ * @returns {string} IP address
+ */
+sensible.node.Strategy.prototype.getIPAddress = function ()
+{
+	var	address = null;
+	
+	var	interfaces = os.networkInterfaces ();
+	
+	for (var name in interfaces)
+	{
+		var	addresses = interfaces [name];
+		
+		for (var i = 0; i &lt; addresses.length; i++)
+		{
+			var	address = addresses [i];
+			
+			if (! address.internal)
+			{
+				if (address.family.toLowerCase () == "ipv4")
+				{
+					// should probably check for dups here, but how would we?
+					address = address.address;
+
+					break;
+				}
+			}
+		}
+		
+		if (address &amp;&amp; address.length)
+		{
+			break;
+		}
+	}
+
+	if (address == null || address.length == 0)
+	{
+		address = "127.0.0.1";
+	}
+
+	return address;
+}
+
+/**
+ * Listen for packets on the UDP socket.
+ *
+ * @param {function} inCallback - function to call on reception
+ */
+sensible.node.Strategy.prototype.listen = function (inCallback)
+{
+	this.socket.on
+	(
+		"message",
+		function (inMessage, inRemoteInfo)
+		{
+			// convert to arraybuffer for the rest of the world
+			var	buffer = new ArrayBuffer (inMessage.length);
+			var	view = new Uint8Array (buffer);
+			
+			for (var i = 0; i &lt; inMessage.length; i++)
+			{
+				view [i] = inMessage [i];
+			}
+	
+			inCallback (buffer, inRemoteInfo.address, inRemoteInfo.port);
+		}
+	);
+}
+
+/**
+ * Send a packet on the UDP socket.
+ *
+ * @param {ArrayBuffer} inPacket - packet
+ * @param {string} inRemoteAddress - remote address
+ * @param {port} inRemotePort - remote port
+ */
+sensible.node.Strategy.prototype.send = function (inPacket, inRemoteAddress, inRemotePort)
+{
+	var	view = new Uint8Array (inPacket);
+
+	var	buffer = new Buffer (inPacket.byteLength);
+	
+	for (var i = 0; i &lt; inPacket.byteLength; i++)
+	{
+		buffer.writeUInt8 (view [i], i);
+	}
+
+	this.socket.send
+	(
+		buffer, 0, buffer.length, inRemotePort, inRemoteAddress,
+		function (inError, inBytes)
+		{
+			if (inError)
+			{
+				console.log ("error sending request");
+				console.log (inError);
+			}
+		}
+	);
+}
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="sensible.Application.html">Application</a></li><li><a href="sensible.fxos.Strategy.html">Strategy</a></li><li><a href="sensible.MDNS.html">MDNS</a></li><li><a href="sensible.node.Server.html">Server</a></li><li><a href="sensible.node.Strategy.html">Strategy</a></li><li><a href="sensible.node.WebServer.html">WebServer</a></li><li><a href="sensible.Strategy.html">Strategy</a></li></ul><h3>Global</h3><ul><li><a href="global.html#sensible">sensible</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Wed Dec 17 2014 17:11:11 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

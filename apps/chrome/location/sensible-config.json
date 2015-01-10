@@ -1,0 +1,5 @@
+{
+		"name": "Sensible-Location",
+		"type": "_sensible._tcp.local",
+		"port": 3000
+}

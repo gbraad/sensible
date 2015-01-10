@@ -1,0 +1,282 @@
+
+.lenslist {
+  
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100%;
+  
+  overflow: hidden;
+  
+  transform-style: preserve-3d;  
+  
+}
+
+.lenslist.far-left {
+
+  transform: translate3d(-100vw, -100vw, 0);
+
+}
+
+
+.lenslist .lenslist-paginator {
+ 
+  position: absolute;
+  top: 17vw;
+  left: 14vw;
+  margin-top: 0vw;
+  transform: rotate(43deg);
+  transform-origin: center center 0px;
+  z-index: 500;
+  
+}
+
+
+.lenslist .lens-overflow-container {
+  
+  position: absolute;
+
+  top: calc( (100vh - 100vw) / 2 );
+  left: 0;
+  width: 100vw;
+  height: 100vw;
+  perspective: 800px;
+  border-radius: 50vw;
+  background: rgba(0,0,0,0.2);
+/*  overflow: hidden;*/
+  
+  transform-style: preserve-3d;
+      
+}
+
+
+.lenslist .lenslist-page {
+  
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vw;
+  
+  transform-style: preserve-3d;
+
+/*  overflow: hidden;*/
+
+/*  -moz-box-sizing: border-box;*/
+
+  transform-origin: center center 0;
+
+  transition-duration: 500ms;
+
+  transform: rotate3d(0,0,1,179deg) translate3d(0,0,-900px);
+  opacity: 0;
+  pointer-events: none;
+  display: block;
+  
+}
+
+
+.lenslist .lenslist-page:first-of-type {
+  
+  transform: rotate3d(0,0,1,0deg) translate3d(0,0,0px);
+  opacity: 1;
+  pointer-events: all;
+  display: block;
+  
+}
+
+
+.lenslist .this-device {
+  
+  position: absolute;
+  top: 40vw;
+  left: 40vw;
+  width: 20vw;
+  height: 20vw;
+  color: white;
+  text-align: center;
+  line-height: 14vw;
+  
+  background: transparent url(resources/nearby-me.png) center no-repeat;
+  background-size: 9vw;
+  z-index: 500;
+  
+  transform: translate3d(0,0,0);
+
+  
+}
+
+
+
+.lenslist .lenslist-icon {
+  
+  position: absolute;
+  width: 20vw;
+  height: 20vw;
+  top: 10vw;
+  left: 50vw;
+  transform-origin: 0vw 40vw 0px;
+  transform-style: preserve-3d;
+/*  box-sizing: border-box;*/
+
+}
+
+.lenslist #running-lens-switcher {
+  position: absolute;
+  width: 80vw;
+  height: 20vw;
+  top: 80vw;
+  left: 40vw;
+  background: none repeat scroll 0% 0% #F00;
+  transform: rotate(-45deg);
+  z-index: 1001;
+}
+
+
+.lenslist #running-lenses {
+  
+  z-index: 1000;
+  position: absolute;
+
+  top: 0vw;
+  left: 0vw;
+  
+  
+  transition-duration: 300ms;
+  transition-timing-function: ease-in;
+  
+  perspective: 800px;
+  perspective-origin: 50vw 50vh;
+  
+
+/*  overflow: hidden;*/
+
+  
+}
+
+.lenslist #running-lenses.offscreen {
+  transform: translate3d(100vw,100vw,0);
+  transition-duration: 750ms;
+}
+
+
+.lenslist .lenslist-icon:nth-of-type(1) { transform: rotateZ(25deg); }
+.lenslist .lenslist-icon:nth-of-type(1) .lenslist-icon-content { transform: rotateZ(-25deg); }
+
+.lenslist .lenslist-icon:nth-of-type(2) { transform: rotateZ(70deg); }
+.lenslist .lenslist-icon:nth-of-type(2) .lenslist-icon-content { transform: rotateZ(-70deg); }
+
+.lenslist .lenslist-icon:nth-of-type(3) { transform: rotateZ(115deg); }
+.lenslist .lenslist-icon:nth-of-type(3) .lenslist-icon-content { transform: rotateZ(-115deg); }
+
+.lenslist .lenslist-icon:nth-of-type(4) { transform: rotateZ(160deg); }
+.lenslist .lenslist-icon:nth-of-type(4) .lenslist-icon-content { transform: rotateZ(-160deg); }
+
+.lenslist .lenslist-icon:nth-of-type(5) { transform: rotateZ(205deg); }
+.lenslist .lenslist-icon:nth-of-type(5) .lenslist-icon-content { transform: rotateZ(-205deg); }
+
+.lenslist .lenslist-icon:nth-of-type(6) { transform: rotateZ(250deg); }
+.lenslist .lenslist-icon:nth-of-type(6) .lenslist-icon-content { transform: rotateZ(-250deg); }
+
+.lenslist .lenslist-icon:nth-of-type(7) { transform: rotateZ(295deg); }
+.lenslist .lenslist-icon:nth-of-type(7) .lenslist-icon-content { transform: rotateZ(-295deg); }
+
+.lenslist .lenslist-icon:nth-of-type(8) { transform: rotateZ(340deg); }
+.lenslist .lenslist-icon:nth-of-type(8) .lenslist-icon-content { transform: rotateZ(-340deg); }
+
+
+
+/* arrangement for a single icon */
+.lenslist .lenslist-icon.count-1:nth-of-type(1) { transform: rotateZ(25deg); }
+.lenslist .lenslist-icon.count-1:nth-of-type(1) .lenslist-icon-content { transform: rotateZ(-25deg); }
+
+/* arrangement for 2 icons */
+.lenslist .lenslist-icon.count-2:nth-of-type(1) { transform: rotateZ(70deg); }
+.lenslist .lenslist-icon.count-2:nth-of-type(1) .lenslist-icon-content { transform: rotateZ(-70deg); }
+.lenslist .lenslist-icon.count-2:nth-of-type(2) { transform: rotateZ(250deg); }
+.lenslist .lenslist-icon.count-2:nth-of-type(2) .lenslist-icon-content { transform: rotateZ(-250deg); }
+
+/* arrangement for 3 icons */
+.lenslist .lenslist-icon.count-3:nth-of-type(1) { transform: rotateZ(25deg); }
+.lenslist .lenslist-icon.count-3:nth-of-type(1) .lenslist-icon-content { transform: rotateZ(-25deg); }
+.lenslist .lenslist-icon.count-3:nth-of-type(2) { transform: rotateZ(160deg); }
+.lenslist .lenslist-icon.count-3:nth-of-type(2) .lenslist-icon-content { transform: rotateZ(-160deg); }
+.lenslist .lenslist-icon.count-3:nth-of-type(3) { transform: rotateZ(295deg); }
+.lenslist .lenslist-icon.count-3:nth-of-type(3) .lenslist-icon-content { transform: rotateZ(-295deg); }
+
+/* arrangement for 4 icons */
+.lenslist .lenslist-icon.count-4:nth-of-type(1) { transform: rotateZ(25deg); }
+.lenslist .lenslist-icon.count-4:nth-of-type(1) .lenslist-icon-content { transform: rotateZ(-25deg); }
+.lenslist .lenslist-icon.count-4:nth-of-type(2) { transform: rotateZ(115deg); }
+.lenslist .lenslist-icon.count-4:nth-of-type(2) .lenslist-icon-content { transform: rotateZ(-115deg); }
+.lenslist .lenslist-icon.count-4:nth-of-type(3) { transform: rotateZ(205deg); }
+.lenslist .lenslist-icon.count-4:nth-of-type(3) .lenslist-icon-content { transform: rotateZ(-205deg); }
+.lenslist .lenslist-icon.count-4:nth-of-type(4) { transform: rotateZ(295deg); }
+.lenslist .lenslist-icon.count-4:nth-of-type(4) .lenslist-icon-content { transform: rotateZ(-295deg); }
+
+/* arrangement for 5 icons */
+.lenslist .lenslist-icon.count-5:nth-of-type(1) { transform: rotateZ(25deg); }
+.lenslist .lenslist-icon.count-5:nth-of-type(1) .lenslist-icon-content { transform: rotateZ(-25deg); }
+.lenslist .lenslist-icon.count-5:nth-of-type(2) { transform: rotateZ(70deg); }
+.lenslist .lenslist-icon.count-5:nth-of-type(2) .lenslist-icon-content { transform: rotateZ(-70deg); }
+.lenslist .lenslist-icon.count-5:nth-of-type(3) { transform: rotateZ(160deg); }
+.lenslist .lenslist-icon.count-5:nth-of-type(3) .lenslist-icon-content { transform: rotateZ(-160deg); }
+.lenslist .lenslist-icon.count-5:nth-of-type(4) { transform: rotateZ(250deg); }
+.lenslist .lenslist-icon.count-5:nth-of-type(4) .lenslist-icon-content { transform: rotateZ(-250deg); }
+.lenslist .lenslist-icon.count-5:nth-of-type(5) { transform: rotateZ(295deg); }
+.lenslist .lenslist-icon.count-5:nth-of-type(5) .lenslist-icon-content { transform: rotateZ(-295deg); }
+
+/* arrangement for 6 icons */
+.lenslist .lenslist-icon.count-6:nth-of-type(1) { transform: rotateZ(25deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(1) .lenslist-icon-content { transform: rotateZ(-25deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(2) { transform: rotateZ(70deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(2) .lenslist-icon-content { transform: rotateZ(-70deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(3) { transform: rotateZ(115deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(3) .lenslist-icon-content { transform: rotateZ(-115deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(4) { transform: rotateZ(205deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(4) .lenslist-icon-content { transform: rotateZ(-205deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(5) { transform: rotateZ(250deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(5) .lenslist-icon-content { transform: rotateZ(-250deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(6) { transform: rotateZ(295deg); }
+.lenslist .lenslist-icon.count-6:nth-of-type(6) .lenslist-icon-content { transform: rotateZ(-295deg); }
+
+
+.lenslist .lenslist-icon-content {
+  
+  position: absolute;
+  width: 20vw;
+  height: 20vw;
+  
+  background: #999;
+  border-radius: 100%;
+  
+  top: 0;
+  left: 0;
+  transform-origin: center;
+  
+  overflow: hidden;
+  color: white;
+  text-align: center;
+  
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;  
+  
+}
+
+.lenslist .lenslauncher {
+  display: none;
+}
+
+.lenslist #refresh-nearby {
+  
+  position: absolute;
+  top: 38vw;
+  left: 40vw;
+  width: 20vw;
+  height: 20vw;
+  
+  z-index: 10001;
+
+}

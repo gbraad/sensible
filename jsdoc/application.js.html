@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: application.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: application.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>sensible.provide ("sensible.Application");
+
+/**
+ * Application which advertises via MDNS and serves via HTTP
+ *
+ * @constructor
+ * @param {function} inCallback - function to call on completion
+ */
+
+sensible.Application = function (inCallback)
+{
+	console.log ("sensible.Application()");
+	
+	// do this first, so it's valid throughout the startup process
+	gSensibleApplication = this;
+	
+	var	self = this;
+	
+	this.loadConfig
+	(
+		function (inError)
+		{
+			if (inError)
+			{
+				console.log ("error loading config...");
+				console.log (inError);
+				
+				// careful here, Ajax will call your error handler
+				// if your success handler throws
+				if (inCallback)
+				{
+					try
+					{
+						inCallback.call (self, inError);
+					}
+					catch (inError)
+					{
+						if (inError)
+						{
+							inCallback.call (self, inError);
+						}
+					}
+				}
+			}
+			else
+			{
+				self.loadProperties
+				(
+					function (inError)
+					{
+						if (inError)
+						{
+							console.log ("error loading properties...");
+							console.log (inError);
+						}
+						else
+						{
+							self.onBeforeStart
+							(
+								function ()
+								{
+									try
+									{
+										self.start
+										(
+											function (inError)
+											{
+												if (inError)
+												{
+													inCallback.call (self, inError);
+												}
+												else
+												{
+													self.onAfterStart
+													(
+														function ()
+														{
+															inCallback.call (self);
+														}
+													);
+												}
+											}
+										);
+									}
+									catch (inError)
+									{
+										if (inError)
+										{
+											inCallback.call (self, inError);
+										}
+									}
+								}
+							);
+						}
+					}
+				);
+			}
+		}
+	);
+}
+
+/**
+ * Return the value of a specific property
+ *
+ * @param {string} inName - name of property to return
+ */
+ 
+sensible.Application.prototype.getProperty = function (inName)
+{
+	var	value = null;
+	
+	var	property = this.propertiesByKey [inName];
+	
+	if (property)
+	{
+		value = property.value;
+	}
+	else
+	{
+		console.error ("sensible.Application.getProperty() can't find property for name " + inName);
+	}
+}
+
+/**
+ * Set the value of a specific property
+ *
+ * @param {string} inName - name of property whose value to set
+ * @param {object} inValue - value
+ */
+ 
+sensible.Application.prototype.setProperty = function (inName, inValue)
+{
+	var	property = this.propertiesByKey [inName];
+	
+	if (property)
+	{
+		property.value = inValue;
+	}
+	else
+	{
+		console.error ("sensible.Application.setProperty() can't find property for name " + inName);
+	}
+}
+
+// APPLICATION INTERFACE
+
+/**
+ * Do app-specific tasks immediately prior to running start()
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.onBeforeStart = function (inCallback)
+{
+	console.log ("Application.onBeforeStart()");
+	inCallback ();
+}
+
+/**
+ * Do app-specific tasks immediately after running start()
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.onAfterStart = function (inCallback)
+{
+	console.log ("Application.onAfterStart()");
+	inCallback ();
+}
+
+// PLATFORM INTERFACE
+
+/**
+ * Load configuration - by default from sensible-config.json
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.loadConfig = function (inCallback)
+{
+	throw new Error ("sensible.Application.loadConfig() called - abstract");
+}
+
+/**
+ * Load properties - by default from sensible-properties.json
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.loadProperties = function (inCallback)
+{
+	throw new Error ("sensible.Application.loadProperties() called - abstract");
+}
+
+/**
+ * Register the hostname with MDNS - name comes from config
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.registerHost = function (inCallback)
+{
+	throw new Error ("sensible.Application.registerHost() called - abstract")
+}
+
+/**
+ * Register the service with MDNS - service info comes from config
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.registerService = function (inCallback)
+{
+	throw new Error ("sensible.Application.registerService() called - abstract")
+}
+
+/**
+ * Save configuration - by default to sensible-config.json
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.saveConfig = function ()
+{
+	throw new Error ("sensible.Application.saveConfig() called - abstract")
+}
+
+/**
+ * Save properties - by default to sensible-properties.json
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.saveProperties = function ()
+{
+	throw new Error ("sensible.Application.saveProperties() called - abstract")
+}
+
+/**
+ * Start everything - MDNS advertisement and HTTP server
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.start = function (inCallback)
+{
+	throw new Error ("sensible.Application.start() called - abstract")
+}			
+
+/**
+ * Start HTTP server
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.startHTTPServer = function (inCallback)
+{
+	throw new Error ("sensible.Application.startHTTPServer() called - abstract")
+}
+
+/**
+ * Stop everything - MDNS advertisement and HTTP server
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.stop = function ()
+{
+	throw new Error ("sensible.Application.stop() called - abstract")
+}
+
+/**
+ * Stop HTTP server
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+ 
+sensible.Application.prototype.stopHTTPServer = function ()
+{
+	throw new Error ("sensible.Application.stopHTTPServer() called - abstract")
+}
+
+/**
+ * Unregister the hostname with MDNS - name comes from config
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.unregisterHost = function (inCallback)
+{
+	throw new Error ("sensible.Application.unregisterHost() called - abstract")
+}
+
+/**
+ * Unregister the service with MDNS - service info comes from config
+ * Usually overridden by platform-specific Application class.
+ *
+ * @param {function} inCallback - function to be called on completion
+ */
+
+sensible.Application.prototype.unregisterService = function ()
+{
+	throw new Error ("sensible.Application.unregisterService() called - abstract")
+}
+
+// PRIVATE
+
+// CONTROLLER ACTIONS
+
+sensible.Application.prototype.config_get = function (inRequest, inCallback)
+{
+	var	response = new Object ();
+	response.type = "json";
+	response.object = this.config;
+	
+	var	name = inRequest.parameters.name;
+	
+	if (name &amp;&amp; name.length)
+	{
+		response.object = this.config [name];
+
+		if (! response.object)
+		{
+			response.type = "error";
+			response.error = "config key " + name + " not found";
+		}
+	}
+	
+	inCallback (response);
+}
+
+sensible.Application.prototype.config_set = function (inRequest, inCallback)
+{
+	var	changed = false;
+	
+	for (var key in inRequest.parameters)
+	{
+		if (key == "name")
+		{
+			if (newValue &amp;&amp; (newValue != this.config.name))
+			{
+				this.config.name = newValue;
+				changed = true;
+			}
+		}
+		else
+		if (key == "type")
+		{
+			if (newValue &amp;&amp; (newValue != this.config.type))
+			{
+				this.config.type = newValue;
+				changed = true;
+			}
+		}
+		else
+		if (key == "port")
+		{
+			var	newPort = parseInt (newValue);
+			
+			if (isNaN (newPort))
+			{
+				console.log ("bad numeric value for setting port : " + inRequest.parameters [key]);
+			}
+			else
+			{
+				if (this.config.port != newPort)
+				{
+					this.config.port = newPort;
+					changed = true;
+				}
+			}
+		}
+		else
+		{
+			console.log ("config_set with unknown key " + key);
+		}
+	}
+	
+	if (changed)
+	{
+		this.saveConfig ();
+		this.stop ();
+		this.start ();
+	}
+	
+	var	response = new Object ();
+	response.type = "json";
+	response.object = this.config;
+	
+	inCallback (response);
+}
+
+sensible.Application.prototype.properties_get = function (inRequest, inCallback)
+{
+	var	response = new Object ();
+	response.type = "json";
+	response.object = this.properties;
+	
+	var	name = inRequest.parameters.name;
+	
+	if (name &amp;&amp; name.length)
+	{
+		response.object = this.propertiesByKey [name];
+
+		if (! response.object)
+		{
+			response.type = "error";
+			response.error = "property " + name + " not found";
+		}
+	}
+	
+	inCallback (response);
+}
+
+sensible.Application.prototype.properties_set = function (inRequest, inCallback)
+{
+	var	changed = false;
+	
+	for (var key in inRequest.parameters)
+	{
+		// sometimes we get zero length keys, from URLs with trailing &amp;s
+		// a little bug in someone's URL parser perchance
+		if (key &amp;&amp; key.length)
+		{
+			var	newValue = inRequest.parameters [key];
+			var	property = this.propertiesByKey [key];
+			
+			if (property)
+			{
+				var	oldValueType = typeof (property.value);
+				
+				if (oldValueType == "string")
+				{
+					if (property.value != newValue)
+					{
+						changed = true;
+						property.value = newValue;
+					}
+				}
+				else
+				if (oldValueType == "number")
+				{
+					var	numberValue = parseInt (newValue);
+					
+					if (isNaN (numberValue))
+					{
+						console.log ("bad numeric value for setting " + key + ": " + newValue);
+					}
+					else
+					{
+						if (numberValue &lt; property.minimum || numberValue > property.maximum)
+						{
+							console.log ("value out of range for setting " + key + ": " + numberValue);
+						}
+						else
+						{
+							if (property.value != numberValue)
+							{
+								changed = true;
+								property.value = numberValue;
+							}
+						}
+					}
+				}
+				else
+				if (oldValueType == "boolean")
+				{
+					var	booleanValue = (newValue.toLowerCase () == "true");
+					
+					if (property.value != booleanValue)
+					{
+						changed = true;
+						property.value = booleanValue;
+					}
+				}
+				else
+				{
+					console.log ("unknown type for setting " + key + ": " + oldValueType);
+				}
+			}
+			else
+			{
+				console.log ("properties_set with unknown key " + key);
+			}
+		}
+	}
+	
+	if (changed)
+	{
+		this.saveProperties ();
+	}
+	
+	var	response = new Object ();
+	response.type = "json";
+	response.object = this.properties;
+	
+	inCallback (response);
+}
+
+// STATIC DATA
+
+sensible.Application.kFileExtensionToContentType = 
+{
+	"gif" : "image/gif",
+	"html" : "text/html",
+	"ico" : "image/x-icon",
+	"jpg" : "image/jpeg",
+	"png" : "image/png",
+	"txt" : "text/plain"
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="sensible.Application.html">Application</a></li><li><a href="sensible.fxos.Strategy.html">Strategy</a></li><li><a href="sensible.MDNS.html">MDNS</a></li><li><a href="sensible.node.Server.html">Server</a></li><li><a href="sensible.node.Strategy.html">Strategy</a></li><li><a href="sensible.node.WebServer.html">WebServer</a></li><li><a href="sensible.Strategy.html">Strategy</a></li></ul><h3>Global</h3><ul><li><a href="global.html#sensible">sensible</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Wed Dec 17 2014 17:11:11 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

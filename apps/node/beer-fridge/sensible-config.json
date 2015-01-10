@@ -1,0 +1,9 @@
+{
+	"_comment" : "config items, reserved names and types",
+
+	"name" : "Beer Fridge",
+	"type" : "_sensible._tcp.local",
+	"port" : 3002,
+	"description" : "Emergency backup beer fridge",
+	"hostname" : "beerfridge.local"
+}

@@ -1,0 +1,9 @@
+{
+	"_comment" : "config items, reserved names and types",
+
+	"name" : "door locks",
+	"type" : "_sensible._tcp.local",
+	"port" : 3005,
+	"description" : "Ensure locked before departure",
+	"hostname" : "doorlock.local"
+}

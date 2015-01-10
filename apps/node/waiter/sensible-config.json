@@ -1,0 +1,9 @@
+{
+	"_comment" : "config items, reserved names and types",
+
+	"name" : "Waiter",
+	"type" : "_sensible._tcp.local",
+	"port" : 3010,
+	"description" : "Go here when you want to pay for stuff",
+	"hostname" : "waiter.local"
+}

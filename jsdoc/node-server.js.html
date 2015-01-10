@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: node-server.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: node-server.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file node-server.js
+ * @copyright Monohm 2014
+ */
+
+sensible.provide ("sensible.node.Server");
+
+/**
+ * Web and Websockets REST server for node.
+ * Listens for HTTP and WS requests and dispatches to REST handlers or files.
+ *
+ * @class
+ * @constructor
+ * @param {integer} inPort - port number on which to listen
+ * @param {object} inDelegate - delegate to resolve REST requests
+ */
+
+sensible.node.Server = function (inPort, inDelegate)
+{
+	this.delegate = inDelegate;
+	
+	this.httpServer = new sensible.node.WebServer (this.onHTTPRequest.bind (this));
+	
+	// some ports can't do web sockets, eg Tessel
+	if (websocket)
+	{
+		this.webSocketServer = new websocket.server
+		({
+			httpServer: this.httpServer.server,
+			autoAcceptConnections: false
+		});
+		
+		console.log ("WebSocket server listening");
+		
+		var	self = this;
+		
+		this.webSocketServer.on
+		(
+			"request",
+			function (inRequest)
+			{
+				var	webSocket = inRequest.accept ("sensible-protocol", inRequest.origin);
+	
+				webSocket.on
+				(
+					"message",
+					function (inMessage)
+					{
+						self.delegate.onWebSocketOpen (webSocket);
+	
+						if (inMessage.type == "utf8")
+						{
+							self.onWSMessage (inMessage.utf8Data, webSocket);
+						}
+						else
+						if (inMessage.type == "binary")
+						{
+							console.log ("binary websockets message received (ignored)");
+						}
+					}
+				);
+	
+				webSocket.on
+				(
+					"close",
+					function ()
+					{
+						self.delegate.onWebSocketClose (webSocket);
+					}
+				);
+			}
+		);
+	}
+	else
+	{
+		console.error ("websocket undefined, disabling web socket server");
+	}
+
+	this.httpServer.listen (inPort);
+}
+
+/**
+ * Stop serving requests.
+ */
+
+sensible.node.Server.prototype.stop = function ()
+{
+	this.httpServer.stop ();
+}
+
+/**
+ * Called on receipt of an HTTP request.
+ * Calls the REST dispatcher to try and resolve the request against our delegate.
+ * If the resolution succeeds, the handler is called and the response assumed to be JSON.
+ * If the resolution fails, we attempt to serve a file with the appropriate path.
+ *
+ * @param {object} inRequest - HTTP request
+ * @param {object} outResponse - HTTP response
+ * @param {object} inRequestURL - parsed URL
+ * @param {object} inRequestParams - parsed request parameters
+ */
+
+sensible.node.Server.prototype.onHTTPRequest = function (inRequest, outResponse, inRequestURL, inRequestParams)
+{
+	console.log (inRequest.socket.remoteAddress + ":" + inRequest.socket.remotePort + ":" + inRequest.url);
+
+	try
+	{
+		// map the node request to a regular parsed-anchor one
+		var	request = 
+		{
+			method: inRequest.method,
+			url:
+			{
+				pathname: inRequestURL.pathname,
+				search: inRequestURL.search ? inRequestURL.search.replace ("?", "") : "",
+				hash: inRequestURL.hash ? inRequestURL.hash.replace ("#", "") : ""
+			},
+			parameters: inRequestParams
+		};
+		
+		var	self = this;
+		
+		sensible.RESTDispatcher.dispatchRequest
+		(
+			request, this.delegate,
+			function (inResponse)
+			{
+				if (inResponse.type == "json")
+				{
+					var	json = JSON.stringify (inResponse.object);
+					
+					var	jsonpCallback = inRequestParams.callback;
+					
+					if (jsonpCallback &amp;&amp; jsonpCallback.length)
+					{
+						json = jsonpCallback + "(" + json + ")";
+					}
+					
+					outResponse.writeHead
+					(
+						200,
+						{
+							"Content-Type" : "application/json",
+							"Content-Length" : json.length
+						}
+					);
+					
+					outResponse.write (json);
+				}
+				else
+				if (inResponse.type == "file")
+				{
+					// we satisfy all file references off the web root
+					var	path = "web/" + inResponse.path;
+					
+					self.sendFile (path, outResponse);
+				}
+				else
+				if (inResponse.type == "error")
+				{
+					console.log ("error running controller");
+					console.log (inResponse.error);
+					
+					outResponse.writeHead
+					(
+						500,
+						inResponse.error,
+						{
+						}
+					);
+						
+					outResponse.end ();	
+				}
+				else
+				{
+					console.error ("sensible.node.Server can't deal with response type " + inResponse.type);
+				}
+			}
+		);
+
+	}
+	catch (inError)
+	{
+		console.log ("error processing " + inRequest.url);
+		console.log (inError.message);
+
+		outResponse.writeHead
+		(
+			500,
+			{
+			},
+			inError.message
+		);
+	}
+	
+	outResponse.end ();
+}
+
+/**
+ * Called on receipt of a WebSockets message.
+ * Calls the REST dispatcher to try and resolve the request against our delegate.
+ * If the resolution succeeds, the handler is called and the response assumed to be JSON.
+ * If the resolution fails, we attempt to serve a file with the appropriate path.
+ *
+ * @param {object} inMessage - WebSockets message
+ * @param {object} inWebSocket - the WebSocket on which the message arrived
+ */
+
+sensible.node.Server.prototype.onWSMessage = function (inMessage, inWebSocket)
+{
+	var	responseObject = null;
+	var	error = null;
+	var	message = JSON.parse (inMessage);
+	
+	console.log ("onWSMessage()");
+	console.log (inMessage);
+	
+	// some of the handlers need to know we're on WS instead of HTTP
+	message.webSocket = inWebSocket;
+	
+	try
+	{
+		var	response = sensible.RESTDispatcher.dispatchMessage (message, this.delegate);
+
+		if (response.object)
+		{
+			var	packet = 
+			{
+				controller: message.controller,
+				action: message.action,
+				data: response.object
+			};
+			
+			inWebSocket.sendUTF (JSON.stringify (packet));
+		}
+	}
+	catch (inError)
+	{
+		console.log ("error processing message " + inMessage.controller + "/" + inMessage.action);
+		console.log (inError.message);
+	}
+}
+
+/**
+ * Send a file with the specified pathname to the specified response.
+ * Called when REST dispatch fails. If the file cannot be found or another
+ * error occurs, a 404 file not found response is sent.
+ *
+ * @param {string} inPathName - path of file
+ * @param {object} outResponse - HTTP response
+ */
+
+sensible.node.Server.prototype.sendFile = function (inPathName, outResponse)
+{
+	console.log ("sensible.node.Server.sendFile(" + inPathName + ")");
+	
+	var	file = null;
+	
+	try
+	{
+		file = fs.readFileSync (inPathName);
+		
+		outResponse.writeHead
+		(
+			200,
+			{
+				"Content-Type" : mime.lookup (inPathName),
+				"Content-Length" : file.length
+			}
+		);
+		
+		outResponse.write (file);
+	}
+	catch (inError)
+	{
+		console.log (inError.message);
+		outResponse.writeHead (404, "File Not Found");
+	}
+}
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="sensible.Application.html">Application</a></li><li><a href="sensible.fxos.Strategy.html">Strategy</a></li><li><a href="sensible.MDNS.html">MDNS</a></li><li><a href="sensible.node.Server.html">Server</a></li><li><a href="sensible.node.Strategy.html">Strategy</a></li><li><a href="sensible.node.WebServer.html">WebServer</a></li><li><a href="sensible.Strategy.html">Strategy</a></li></ul><h3>Global</h3><ul><li><a href="global.html#sensible">sensible</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Wed Dec 17 2014 17:11:11 GMT-0800 (PST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

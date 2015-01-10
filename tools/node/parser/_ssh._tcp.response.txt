@@ -1,0 +1,256 @@
+000 00 ?
+000 00 ?
+132 84 ?
+000 00 ?
+000 00 ?	// 0 questions
+000 00 ?
+000 00 ?	// 2 answers
+002 02 ?
+000 00 ?	// 0 authorities
+000 00 ?
+000 00 ?	// 6 additionals
+006 06 ?
+004 04 ?	// ANSWER 0 - type PTR
+095 5f _
+115 73 s
+115 73 s
+104 68 h
+004 04 ?
+095 5f _
+116 74 t
+099 63 c
+112 70 p
+005 05 ?
+108 6c l
+111 6f o
+099 63 c
+097 61 a
+108 6c l
+000 00 ?
+000 00 ?
+012 0c ?
+000 00 ?
+001 01 ?
+000 00 ?
+000 00 ?
+017 11 ?
+148 94 ?
+000 00 ?
+014 0e ?
+011 0b ?
+114 72 r
+101 65 e
+100 64 d
+102 66 f
+105 69 i
+115 73 s
+104 68 h
+097 61 a
+105 69 i
+114 72 r
+050 32 2
+192 c0 ?	// c00c including _ssh._tcp.local from answer 0 -> redfishair2._ssh._tcp.local
+012 0c ?
+011 0b ?	// ANSWER 1 - type TXT
+114 72 r
+101 65 e
+100 64 d
+102 66 f
+105 69 i
+115 73 s
+104 68 h
+097 61 a
+105 69 i
+114 72 r
+050 32 2
+012 0c ?
+095 5f _
+100 64 d
+101 65 e
+118 76 v
+105 69 i
+099 63 c
+101 65 e
+045 2d -
+105 69 i
+110 6e n
+102 66 f
+111 6f o
+192 c0 ?	// c011 including _tcp.local from answer 0
+017 11 ?
+000 00 ?
+016 10 ?
+000 00 ?
+001 01 ?
+000 00 ?
+000 00 ?
+017 11 ?
+148 94 ?
+000 00 ?
+020 14 ?
+019 13 ?
+109 6d m
+111 6f o
+100 64 d
+101 65 e
+108 6c l
+061 3d ?
+077 4d M
+097 61 a
+099 63 c
+066 42 B
+111 6f o
+111 6f o
+107 6b k
+065 41 A
+105 69 i
+114 72 r
+053 35 5
+044 2c ?
+049 31 1
+192 c0 ?	// ADDITIONAL 0 type 16 TXT
+039 27 ?	// c027 including redfishair2 from answer 0
+000 00 ?	
+016 10 ?
+128 80 ?	// class 0x81 = expire cache IN
+001 01 ?
+000 00 ?	// TTL of 4500
+000 00 ?
+017 11 ?
+148 94 ?
+000 00 ?	// RDATA length of 1
+001 01 ?
+000 00 ?
+192 c0 ?	// ADDITIONAL 1 type 33 SRV
+039 27 ?	// c027 including redfishair2 from answer 0 -> redfishair2._ssh._tcp.local
+000 00 ?	// type 33 = SRV
+033 21 ?
+128 80 ?	// class 0x81 = expire cache IN
+001 01 ?
+000 00 ?	// TTL of 120
+000 00 ?
+000 00 ?
+120 78 x
+000 00 ?	// rdata length = 20
+020 14 ?
+000 00 ?	// priority
+000 00 ?
+000 00 ?	// weight
+000 00 ?
+000 00 ?	// port!!
+022 16 ?
+011 0b ?	// dns name?
+114 72 r
+101 65 e
+100 64 d
+102 66 f
+105 69 i
+115 73 s
+104 68 h
+097 61 a
+105 69 i
+114 72 r
+050 32 2
+192 c0 ?
+022 16 ?	// c016 including .local from answer0
+192 c0 ?	// ADDITIONAL 2 type AAAA
+141 8d ?	// c08d including redfishair2 from SRV record -> redfishair2.local
+000 00 ?	// packet type 28 - IPV6 record which we didn't ask for
+028 1c ?
+128 80 ?	// class = 0x81 - expire cache IN
+001 01 ?
+000 00 ?	// TTL = 120
+000 00 ?
+000 00 ?
+120 78 x
+000 00 ?	// 16 bytes of rdata = IPV6 address
+016 10 ?
+254 fe ?
+128 80 ?
+000 00 ?
+000 00 ?
+000 00 ?
+000 00 ?
+000 00 ?
+000 00 ?
+114 72 r
+086 56 V
+129 81 ?
+255 ff ?
+254 fe ?
+189 bd ?
+207 cf ?
+233 e9 ?
+192 c0 ?	// ADDITIONAL 3 type A
+141 8d ?	// c08d including redfishair2 from SRV additional -> redfishair2.local
+000 00 ?	// packet type 1 - A record for IPV4 which we DID ask for
+001 01 ?
+128 80 ?	// class = 0x81
+001 01 ?
+000 00 ?	// TTL = 120
+000 00 ?
+000 00 ?
+120 78 x
+000 00 ?	// rdata length = 4
+004 04 ?
+010 0a ?	// IP 10.0.1.14 = correct!!
+000 00 ?
+001 01 ?
+014 0e ?
+192 c0 ?	// ADDITIONAL 4 type NSEC
+039 27 ?	// c027 including redfishair2 from PTR answer
+000 00 ?	// packet type 47 - NSEC (?)
+047 2f ?
+128 80 ?	// class = 0x81
+001 01 ?
+000 00 ?	// TTL = 4500
+000 00 ?
+017 11 ?
+148 94 ?
+000 00 ?	// rdata is length 9
+009 09 ?
+192 c0 ?	// jump to redfishair2 again
+039 27 ?
+000 00 ?	// something is length 5
+005 05 ?
+000 00 ?
+000 00 ?
+128 80 ?
+000 00 ?
+064 40 ?
+
+192 c0 ?	// ADDITIONAL 5 NSEC
+141 8d ?	// c08d including redfishair2 from SRV additional
+000 00 ?	// packet type 47 - NSEC
+047 2f ?
+128 80 ?	// class = 0x81
+001 01 ?
+000 00 ?	// ttl = 120
+000 00 ?
+000 00 ?
+120 78 x
+000 00 ?	// rdata length = 8
+008 08 ?
+192 c0 ?	// run off to redfishair2 again
+141 8d ?
+000 00 ?
+004 04 ?
+064 40 ?
+000 00 ?
+000 00 ?
+008 08 ?
+
+c00c (12) answer 0 (PTR) name _ssh._tcp.local -- used by answer 0 (PTR) rdata
+
+c027 (39) answer 0 (PTR) rdata redfishair2 -- used by additional 0 (TXT) name
+c027 (39) answer 0 (PTR) rdata redfishair2 -- used by additional 1 (SRV) name
+
+c08d (141) additional 1 (SRV) rdata redfishair2 -- used by additional 2 (AAAA) name
+c08d (141) additional 2 (SRV) rdata redfishair2 -- used by additional 3 (A) name
+
+ignore the NSEC records
+
+c027 (39) answer 0 (PTR) rdata redfishair2 -- used by additional 4 (NSEC) name
+c08d (141) additional 2 (SRV) rdata redfishair2 -- used by additional 4 (NSEC) name
+
+

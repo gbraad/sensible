@@ -1,0 +1,5 @@
+[
+	{"name":"latitude","priority": 0,"type":"integer","readonly":true,"maximum":200,"minimum":-200,"value":30},
+	{"name":"longitude","priority": 0,"type":"integer","readonly":true,"maximum":200,"minimum":-200,"value":-127},
+	{"name":"altitude","priority": 1,"type":"integer","readonly":true,"maximum":50000,"minimum":-50000,"value": 0}
+]
